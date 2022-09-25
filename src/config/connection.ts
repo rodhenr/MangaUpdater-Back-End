@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
 
-const db_URL = "mongodb://localhost:27017/mangaupdaterDB";
-mongoose.connect(db_URL);
+mongoose.connect(`${process.env.DATABASE_URL}`);
 
 const conn = mongoose.connection;
 conn.on("error", () => console.error.bind(console, "connection error"));

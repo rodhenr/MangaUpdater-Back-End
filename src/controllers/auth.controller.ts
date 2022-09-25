@@ -8,9 +8,24 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const signUp = async (req: Request, res: Response) => {
+  if (!req.body.email || !req.body.password || !req.body.username)
+    return res.status(400).send({
+      message: "Dados inválidos",
+    });
+
   const { email, password, username } = req.body;
 
+  if (!email || !password || !username)
+    return res.status(400).send({
+      message: "Dados inválidos",
+    });
+  //criar middleware para lidar com inputs incorretos
+
+  const session = await conn.startSession();
+
   try {
+    session.startTransaction();
+
     const hashedPassword = await bcrypt.hash(password, 10);
     await userModel.create({
       avatar: "",
@@ -19,14 +34,20 @@ const signUp = async (req: Request, res: Response) => {
       email: email,
       following: [],
     });
-    res.status(200).json({
+    res.status(200).send({
       message: "O usuário foi registrado com sucesso",
     });
   } catch (err) {
-    res.status(500).json({
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).send({
       message: "Aconteceu um erro no seu registro...",
     });
   }
 };
 
-module.exports = { signUp };
+const signIn = async (req: Request, res: Response) => {
+  
+}
+
+export { signIn, signUp };
