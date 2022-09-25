@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const signUp = async (req: Request, res: Response) => {
+const register = async (req: Request, res: Response) => {
   if (!req.body.email || !req.body.password || !req.body.username)
     return res.status(400).send({
       message: "Dados inválidos",
@@ -46,8 +46,43 @@ const signUp = async (req: Request, res: Response) => {
   }
 };
 
-const signIn = async (req: Request, res: Response) => {
-  
-}
+const login = async (req: Request, res: Response) => {
+  if (!req.body.email || !req.body.password)
+    return res.status(400).send({
+      message: "Dados inválidos",
+    });
 
-export { signIn, signUp };
+  const { email, password } = req.body;
+
+  const session = await conn.startSession();
+
+  try {
+    session.startTransaction();
+
+    const user = await userModel.findOne({
+      email: email,
+    });
+
+    if (!user)
+      return res
+        .status(401)
+        .send({ message: "Login inválido! Tente novamente." });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch)
+      return res
+        .status(401)
+        .send({ message: "Login inválido! Tente novamente." });
+
+    res.status(200).send("Login bem-sucedido!");
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).send({
+      message: "Aconteceu um erro no seu registro...",
+    });
+  }
+};
+
+export { login, register };
