@@ -16,7 +16,7 @@ const newRegister = async (req: Request, res: Response) => {
     session.startTransaction();
     const isNew = await mangaModel.findOne({
       sources: {
-        id: id,
+        $elemMatch: { id: id },
       },
     });
 
@@ -26,6 +26,7 @@ const newRegister = async (req: Request, res: Response) => {
 
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
+    //VERIFICAR SE É INVÁLIDO
 
     const sources = [{ name: "MU", id }];
     const name = $(".releasestitle").text();
@@ -82,7 +83,6 @@ const newRegister = async (req: Request, res: Response) => {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.log(err);
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
