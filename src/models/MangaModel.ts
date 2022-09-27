@@ -6,17 +6,14 @@ const sources = new Schema({
 });
 
 const chapters = new Schema({
-  number: { type: Number, required: true },
+  number: { type: String, required: true },
   scan: { type: String, required: true },
   date: { type: Date, required: true },
   source: { type: String, required: true },
 });
 
 const mangaSchema = new Schema({
-  image: {
-    data: Buffer,
-    contentType: String,
-  },
+  image: { type: String, required: true },
   name: { type: String, required: true },
   author: { type: String, required: true },
   chapters: { type: [chapters], required: true, default: [] },
