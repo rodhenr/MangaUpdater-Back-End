@@ -1,7 +1,7 @@
 import { mangaModel } from "../models/MangaModel";
 import { conn } from "../config/connection";
 import { Request, Response } from "express";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import * as cheerio from "cheerio";
 import dotenv from "dotenv";
 
@@ -26,7 +26,6 @@ const newRegister = async (req: Request, res: Response) => {
 
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
-    //VERIFICAR SE É INVÁLIDO
 
     const sources = [{ name: "MU", id }];
     const name = $(".releasestitle").text();
@@ -75,12 +74,13 @@ const newRegister = async (req: Request, res: Response) => {
       sources,
     };
 
-    console.log(mangaData);
-
     await mangaModel.create(mangaData);
 
     res.status(200).send("Registro criado com sucesso!");
-  } catch (err) {
+  } catch (error) {
+    const err = error as AxiosError;
+    if(err.response?.status === 404) return res.status(404).send("ID inválida!");
+
     await session.abortTransaction();
     session.endSession();
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
