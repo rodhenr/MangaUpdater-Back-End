@@ -7,7 +7,12 @@ export const searchInfo = async (id: string, isNew: boolean) => {
   const { data } = await axios.get(url);
   const $ = cheerio.load(data);
 
-  const chapterNumber = $("div.sContent:contains('c.') i").first().text();
+  let chapterNumber: string;
+  if ($("div.sContent:contains('v.')")) {
+    chapterNumber = $("div.sContent:contains('c.') i").eq(1).text();
+  } else {
+    chapterNumber = $("div.sContent:contains('c.') i").first().text();
+  }
   const chapterScan = $('a[title="Group Info"]').first().text();
   const chapterDate = $(".sContent span").first().prop("title");
 
@@ -42,13 +47,13 @@ export const searchInfo = async (id: string, isNew: boolean) => {
   ];
 
   if (isNew) {
-    const sources = [{ name: "MU", id }];
+    const sources = [{ name: "MU", linkId: id }];
     const name = $(".releasestitle").text();
     const image = $(".sContent center img").prop("src");
     let author = $("a[title='Author Info']").first().text();
 
     //Tratar caso com add (e.g. dmnckia)
-    //if(author === "") 
+    //if(author === "")
 
     return {
       image,

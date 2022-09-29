@@ -46,7 +46,7 @@ const updateRegister = async (req: Request, res: Response) => {
     session.startTransaction();
     const manga = await mangaModel.findOne({
       sources: {
-        $elemMatch: { id: id },
+        $elemMatch: { linkId: id },
       },
     });
 
@@ -56,14 +56,14 @@ const updateRegister = async (req: Request, res: Response) => {
       res.status(200).send("Registro criado com sucesso!");
     } else {
       const mangaInfoData = await searchInfo(id, false);
-
-      if (manga.chapters[0].number === mangaInfoData.chapters[0].number)
-        return res.status(200).send("Registro atualizado com sucesso!");
-
-      await mangaModel.findByIdAndUpdate(id, {
-        chapters: [...manga.chapters, mangaInfoData.chapters[0]],
-      });
-      res.status(200).send("Registro atualizado com sucesso!");
+      if (manga.chapters[0].number === mangaInfoData.chapters[0].number) {
+        return res.status(200).send("Último capítulo já atualizado!");
+      } else {
+        await mangaModel.findByIdAndUpdate(manga._id, {
+          chapters: [...manga.chapters, mangaInfoData.chapters[0]],
+        });
+        res.status(200).send("Registro atualizado com sucesso!");
+      }
     }
   } catch (error) {
     await session.abortTransaction();
