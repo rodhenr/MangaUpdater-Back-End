@@ -1,25 +1,29 @@
 import { model, Schema } from "mongoose";
 
-// É possível ler de várias sources (mangadex/mangaupdates por exemplo)
+interface ILastRead {
+  chapter: string;
+  source: string;
+}
 
-const lastRead = new Schema(
+interface IFollowing {
+  mangaId: Schema.Types.ObjectId;
+  image: Buffer;
+  name: string;
+  author: string;
+  lastRead: ILastRead[];
+}
+
+const lastRead = new Schema<ILastRead>(
   {
-    id: { type: Schema.Types.ObjectId, required: true },
-    chapter: { type: Number, required: true },
+    chapter: { type: String, required: true },
     source: { type: String, required: true },
   },
   { _id: false }
 );
 
-const followingSchema = new Schema(
+const followingSchema = new Schema<IFollowing>(
   {
-    id: { type: Schema.Types.ObjectId, required: true },
-    image: {
-      data: Buffer,
-      contentType: String,
-    },
-    name: { type: String, required: true },
-    author: { type: String, required: true },
+    mangaId: { type: Schema.Types.ObjectId, required: true },
     lastRead: { type: [lastRead], required: true, default: [] },
   },
   { _id: false }

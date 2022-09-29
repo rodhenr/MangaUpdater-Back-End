@@ -3,10 +3,12 @@ import {
   newRegister,
   updateRegister,
 } from "../controllers/commands.controller";
+import { followingData } from "../controllers/user.controller";
 
 const mangaRoutes = Express.Router();
 
 mangaRoutes.route("/api/new").post(newRegister);
 mangaRoutes.route("/api/update").post(updateRegister);
+mangaRoutes.route("/api/list").post(followingData);
 
 export default mangaRoutes;

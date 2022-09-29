@@ -5,9 +5,6 @@ import { AxiosError } from "axios";
 import { searchInfo } from "../utils/mangaInfo";
 import dotenv from "dotenv";
 
-
-
-
 dotenv.config();
 
 const newRegister = async (req: Request, res: Response) => {
