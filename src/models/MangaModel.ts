@@ -12,7 +12,7 @@ interface IChapter {
   source: string;
 }
 
-interface IManga {
+export interface IManga {
   _id: Schema.Types.ObjectId;
   image: string;
   name: string;

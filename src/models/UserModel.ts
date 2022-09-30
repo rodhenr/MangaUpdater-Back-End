@@ -7,10 +7,16 @@ interface ILastRead {
 
 interface IFollowing {
   mangaId: Schema.Types.ObjectId;
-  image: Buffer;
-  name: string;
-  author: string;
   lastRead: ILastRead[];
+}
+
+interface IUser {
+  _id: Schema.Types.ObjectId;
+  username: string;
+  password: string;
+  email: string;
+  avatar: string;
+  following: IFollowing[];
 }
 
 const lastRead = new Schema<ILastRead>(
@@ -29,11 +35,11 @@ const followingSchema = new Schema<IFollowing>(
   { _id: false }
 );
 
-const userSchema = new Schema({
+const userSchema = new Schema<IUser>({
   username: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true },
-  avatar: { data: Buffer, contentType: String },
+  avatar: { data: String, contentType: String },
   following: { type: [followingSchema], required: true, default: [] },
 });
 

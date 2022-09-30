@@ -1,14 +1,14 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
-export const searchInfo = async (id: string, isNew: boolean) => {
+export const searchInfo = async (id: string) => {
   const url = `https://www.mangaupdates.com/series/${id}`;
 
   const { data } = await axios.get(url);
   const $ = cheerio.load(data);
 
   let chapterNumber: string;
-  if ($("div.sContent:contains('v.')")) {
+  if ($("div.sContent:contains('v.')").length > 0) {
     chapterNumber = $("div.sContent:contains('c.') i").eq(1).text();
   } else {
     chapterNumber = $("div.sContent:contains('c.') i").first().text();
@@ -46,23 +46,20 @@ export const searchInfo = async (id: string, isNew: boolean) => {
     },
   ];
 
-  if (isNew) {
-    const sources = [{ name: "MU", linkId: id }];
-    const name = $(".releasestitle").text();
-    const image = $(".sContent center img").prop("src");
-    let author = $("a[title='Author Info']").first().text();
+  const sources = [{ name: "MU", linkId: id }];
+  const name = $(".releasestitle").text();
+  const image = $(".sContent center img").prop("src");
+  let author = $("a[title='Author Info']").first().text();
 
-    //Tratar caso com add (e.g. dmnckia)
-    //if(author === "")
+  //Tratar caso com add (e.g. dmnckia)
+  //if(author === "")
+  //Fazer buscar os 3 últimos capítulos
 
-    return {
-      image,
-      name,
-      author,
-      chapters,
-      sources,
-    };
-  } else {
-    return { chapters };
-  }
+  return {
+    image,
+    name,
+    author,
+    chapters,
+    sources,
+  };
 };
