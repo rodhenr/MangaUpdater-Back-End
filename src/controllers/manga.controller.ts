@@ -1,12 +1,9 @@
-import { mangaModel, IManga } from "../models/MangaModel";
+import { mangaModel } from "../models/MangaModel";
 import { userModel } from "../models/UserModel";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
-import dotenv from "dotenv";
 import { searchInfo } from "../utils/mangaInfo";
 import { conn } from "../config/connection";
-
-dotenv.config();
 
 const updateAllFollowing = async (data: string[]) => {
   const newData = await Promise.all(
@@ -38,12 +35,70 @@ const followNewManga = async (req: Request, res: Response) => {
       name: userName,
     });
 
-    if (!manga || !user) return res.status(404).send("Não encontrado");
+    if (!manga || !user) return res.status(404).send("Dados não encontrados.");
 
     await userModel.findByIdAndUpdate(user._id, {
+      following: [
+        ...user.following,
+        {
+          mangaId: manga._id,
+          lastRead: [],
+          source: [
+            { name: manga.sources[0].name, linkId: manga.sources[0].linkId }, // Arrumar para passar source por req.body
+          ],
+        },
+      ],
+    });
+    return res.status(200).send("Seguindo!");
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    const err = error as AxiosError;
+    res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
+  }
+};
+
+const deleteFollowManga = async (req: Request, res: Response) => {
+  if (!req.body.id || !req.body.userName || !req.body.source)
+    return res.status(400).send("Dados inválidos!");
+
+  const { userName, source, id } = req.body; // id do mongoose
+
+  const session = await conn.startSession();
+  try {
+    session.startTransaction();
+
+    const manga = await mangaModel.findById(id);
+
+    const user = await userModel.findOne({
+      name: userName,
+    });
+
+    if (!manga || !user) return res.status(404).send("Dados não encontrados.");
+
+    // Se estiver seguindo só uma fonte -> deleta
+    // Se estiver seguindo de mais de uma fonte -> remove apenas o source
+    // Se não estiver seguindo, retorna erro
+
+    const newFollowing = user.following.filter((i) => {
+      if (id !== i.mangaId) {
+        return i;
+      } else {
+        if (i.sources.length > 1) {
+          return i.sources.filter((j) => j.name !== source);
+        } else {
+          return;
+        }
+      }
+    });
+
+    console.log(newFollowing);
+
+    /*await userModel.findByIdAndUpdate(user._id, {
       following: [...user.following, { mangaId: manga._id, lastRead: [] }],
     });
-    return res.status(200).send("Usuário seguindo novo mangá!");
+
+    return res.status(200).send("Parou de seguir!");*/
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -77,7 +132,7 @@ const followingData = async (req: Request, res: Response) => {
           return "";
         }
       })
-      .filter((j) => j !== "");
+      .filter((j) => j !== "" && j !== undefined);
 
     const newData = await updateAllFollowing(ids);
 
@@ -141,4 +196,4 @@ const searchManga = async (req: Request, res: Response) => {
   }
 };
 
-export { followNewManga, followingData, searchManga };
+export { deleteFollowManga, followNewManga, followingData, searchManga };

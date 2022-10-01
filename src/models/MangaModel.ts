@@ -1,15 +1,16 @@
 import { Document, model, Schema, Types } from "mongoose";
 
-interface ISource {
-  name: string;
+export interface ISource {
+  id: Schema.Types.ObjectId;
   linkId: string;
 }
 
 interface IChapter {
+  _id: Schema.Types.ObjectId;
   number: string;
   scan: string;
   date: Date;
-  source: string;
+  source: Schema.Types.ObjectId;
 }
 
 export interface IManga {
@@ -18,25 +19,22 @@ export interface IManga {
   name: string;
   author: string;
   chapters: Types.DocumentArray<IChapter & Document>;
-  sources: Types.DocumentArray<ISource & Document>;
+  sources: ISource[];
 }
-const sourcesSchema = new Schema<ISource>(
+export const sourcesSchema = new Schema<ISource>(
   {
-    name: { type: String, required: true },
+    id: { type: Types.ObjectId, required: true },
     linkId: { type: String, required: true },
   },
   { _id: false }
 );
 
-const chaptersSchema = new Schema<IChapter>(
-  {
-    number: { type: String, required: true },
-    scan: { type: String, required: true },
-    date: { type: Date, required: true },
-    source: { type: String, required: true },
-  },
-  { _id: false }
-);
+const chaptersSchema = new Schema<IChapter>({
+  number: { type: String, required: true },
+  scan: { type: String, required: true },
+  date: { type: Date, required: true },
+  source: { type: Types.ObjectId, required: true },
+});
 
 const mangaSchema = new Schema<IManga>({
   image: { type: String, required: true },

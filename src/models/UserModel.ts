@@ -1,13 +1,9 @@
 import { model, Schema } from "mongoose";
-
-interface ILastRead {
-  chapter: string;
-  source: string;
-}
+import { ISource, sourcesSchema } from "./MangaModel";
 
 interface IFollowing {
   mangaId: Schema.Types.ObjectId;
-  lastRead: ILastRead[];
+  sources: ISource[];
 }
 
 interface IUser {
@@ -19,18 +15,10 @@ interface IUser {
   following: IFollowing[];
 }
 
-const lastRead = new Schema<ILastRead>(
-  {
-    chapter: { type: String, required: true },
-    source: { type: String, required: true },
-  },
-  { _id: false }
-);
-
 const followingSchema = new Schema<IFollowing>(
   {
     mangaId: { type: Schema.Types.ObjectId, required: true },
-    lastRead: { type: [lastRead], required: true, default: [] },
+    sources: { type: [sourcesSchema], required: true, default: [] },
   },
   { _id: false }
 );
@@ -39,7 +27,7 @@ const userSchema = new Schema<IUser>({
   username: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true },
-  avatar: { data: String, contentType: String },
+  avatar: { data: Buffer, contentType: String, default: "" },
   following: { type: [followingSchema], required: true, default: [] },
 });
 
