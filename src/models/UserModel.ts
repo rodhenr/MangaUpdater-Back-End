@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
 import { ISource, sourcesSchema } from "./MangaModel";
 
-interface IFollowing {
+export interface IFollowing {
   mangaId: Schema.Types.ObjectId;
   sources: ISource[];
 }

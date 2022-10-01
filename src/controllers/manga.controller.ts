@@ -1,144 +1,151 @@
 import { mangaModel } from "../models/MangaModel";
-import { userModel } from "../models/UserModel";
+import { conn } from "../config/connection";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
 import { searchInfo } from "../utils/mangaInfo";
-import { conn } from "../config/connection";
+import { userModel } from "../models/UserModel";
+import { isValidObjectId, Schema } from "mongoose";
+import { sourceModel } from "../models/SourceModel";
 
-const updateAllFollowing = async (data: string[]) => {
-  const newData = await Promise.all(
-    data.map((i) => {
-      return searchInfo(i);
-    })
-  );
+interface ISource {
+  id: Schema.Types.ObjectId;
+  linkId: string;
+}
 
-  return newData;
-};
-
-const followNewManga = async (req: Request, res: Response) => {
-  if (!req.body.id || !req.body.userName)
+const newManga = async (req: Request, res: Response) => {
+  if (!req.body.linkId || !req.body.sourceId)
     return res.status(400).send("Dados inválidos!");
-
-  const { userName, id } = req.body;
+  const { linkId, sourceId } = req.body;
 
   const session = await conn.startSession();
+
   try {
     session.startTransaction();
 
-    const manga = await mangaModel.findOne({
+    //Verifica se já existe na DB
+    const isNew = await mangaModel.findOne({
       sources: {
-        $elemMatch: { linkId: id },
+        $elemMatch: { linkId, id: sourceId },
       },
     });
+    if (isNew) return res.status(400).send("ID já cadastrada!");
 
-    const user = await userModel.findOneAndUpdate({
-      name: userName,
-    });
+    // Cadastra o novo item na DB
+    const mangaInfoData = await searchInfo(linkId, sourceId);
+    await mangaModel.create(mangaInfoData);
 
-    if (!manga || !user) return res.status(404).send("Dados não encontrados.");
-
-    await userModel.findByIdAndUpdate(user._id, {
-      following: [
-        ...user.following,
-        {
-          mangaId: manga._id,
-          lastRead: [],
-          source: [
-            { name: manga.sources[0].name, linkId: manga.sources[0].linkId }, // Arrumar para passar source por req.body
-          ],
-        },
-      ],
-    });
-    return res.status(200).send("Seguindo!");
+    session.endSession();
+    res.status(200).send("Registro criado com sucesso!");
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     const err = error as AxiosError;
+    if (err.response?.status === 404)
+      return res.status(400).send("ID inválida!");
+    console.log(error);
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
 
-const deleteFollowManga = async (req: Request, res: Response) => {
-  if (!req.body.id || !req.body.userName || !req.body.source)
+const updateManga = async (req: Request, res: Response) => {
+  if (!req.body.linkId || !req.body.sourceId)
     return res.status(400).send("Dados inválidos!");
-
-  const { userName, source, id } = req.body; // id do mongoose
+  const { linkId, sourceId } = req.body;
 
   const session = await conn.startSession();
+
   try {
     session.startTransaction();
 
-    const manga = await mangaModel.findById(id);
-
-    const user = await userModel.findOne({
-      name: userName,
+    //Verifica se já existe na DB
+    const manga = await mangaModel.findOne({
+      sources: {
+        $elemMatch: { linkId, id: sourceId },
+      },
     });
+    if (!manga) return res.status(400).send("Item não localizado.");
 
-    if (!manga || !user) return res.status(404).send("Dados não encontrados.");
+    //Verifica se a sourceId é válida e se existe na DB
+    const obj = isValidObjectId(sourceId);
+    console.log(obj);
+    if (!obj) return res.status(400).send("SourceId inválida.");
+    const source = await sourceModel.findById(sourceId);
+    if (!source) return res.status(400).send("Source não localizada.");
 
-    // Se estiver seguindo só uma fonte -> deleta
-    // Se estiver seguindo de mais de uma fonte -> remove apenas o source
-    // Se não estiver seguindo, retorna erro
+    //Busca os dados do novo capítulo
+    const mangaInfoData = await searchInfo(linkId, sourceId);
 
-    const newFollowing = user.following.filter((i) => {
-      if (id !== i.mangaId) {
-        return i;
+    //Procura por algum capítulo anterior da source passada via parâmetro
+    const hasChapter = manga.chapters.filter((i) => i.source === sourceId);
+
+    //Atualiza ou não o item em questão
+    if (hasChapter.length === 0) {
+      //Atualiza a DB
+      await mangaModel.findByIdAndUpdate(manga._id, {
+        chapters: [mangaInfoData.chapter, ...manga.chapters],
+      });
+    } else {
+      //Recebe todos capítulos que não são da source atual
+      const filterChapters = manga.chapters.filter(
+        (i) => i.source !== sourceId
+      );
+
+      //Atualiza a DB
+      await mangaModel.findByIdAndUpdate(manga._id, {
+        chapters: [mangaInfoData.chapter, ...filterChapters],
+      });
+    }
+
+    session.endSession();
+    res.status(200).send("Registro atualizado com sucesso!");
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    const err = error as AxiosError;
+    if (err.response?.status === 404)
+      return res.status(400).send("ID inválida!");
+    res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
+  }
+};
+
+const getMangas = async (req: Request, res: Response) => {
+  /* if (!req.userEmail) return res.status(400).send("Dados inválidos!");
+
+  //Recebe o parâmetro através do middleware que verifica o token
+  const { userEmail } = req;
+
+  const session = await conn.startSession();
+
+  try {
+    session.startTransaction();
+
+    //Procura e valida o usuário
+    const user = await userModel.findOne({ email: userEmail });
+    if (!user) return res.status(404).send("Usuário não encontrado");
+
+    //Gera um objeto para cada item e source que o usuário segue
+    const ids = user.following.map((i) => {
+      if (i.sources.length > 1) {
+        const listSources = i.sources.map((j) => {
+          return { linkId: j.linkId, sourceId: j.id };
+        });
+        return { ...listSources };
       } else {
-        if (i.sources.length > 1) {
-          return i.sources.filter((j) => j.name !== source);
-        } else {
-          return;
-        }
+        return { linkId: i.sources[0].linkId, sourceId: i.sources[0].id };
       }
     });
 
-    console.log(newFollowing);
-
-    /*await userModel.findByIdAndUpdate(user._id, {
-      following: [...user.following, { mangaId: manga._id, lastRead: [] }],
-    });
-
-    return res.status(200).send("Parou de seguir!");*/
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    const err = error as AxiosError;
-    res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
-  }
-};
-
-const followingData = async (req: Request, res: Response) => {
-  if (!req.body.userName) return res.status(400).send("Dados inválidos!");
-  const { userName } = req.body;
-
-  const session = await conn.startSession();
-  try {
-    session.startTransaction();
-    const user = await userModel.findOne({ username: userName });
-
-    if (!user) return res.status(404).send("Usuário não encontrado");
-
-    const following = await Promise.all(
-      user.following.map((i) => {
-        return mangaModel.findById(i.mangaId);
+    //Atualiza todos itens
+    const newData = await Promise.all(
+      ids.map((i) => {
+        return searchInfo(i.linkId!, i.sourceId!);
       })
     );
 
-    const ids = following
-      .map((i) => {
-        if (i !== null) {
-          return i.sources[0].linkId;
-        } else {
-          return "";
-        }
-      })
-      .filter((j) => j !== "" && j !== undefined);
-
-    const newData = await updateAllFollowing(ids);
-
+    //Atualiza a BD
     await Promise.all(
       newData.map((i) => {
-        return mangaModel.updateOne({
+        mangaModel.updateOne({
           sources: {
             $elemMatch: { linkId: i.sources[0].linkId },
           },
@@ -147,53 +154,20 @@ const followingData = async (req: Request, res: Response) => {
     );
 
     const userReturn = newData.map((i) => {
-      if (i?.chapters) {
-        if (i.chapters.length > 3) {
-          return {
-            ...i,
-            chapters: [i.chapters[0], i.chapters[1], i.chapters[2]],
-          };
-        } else {
-          return i;
-        }
+      if (i?.chapter) {
+        return i;
       }
     });
 
-    res.status(200).json({ data: userReturn });
+    //res.status(200).json({ data: userReturn });
+    res.status(200).json({ data: ids });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     const err = error as AxiosError;
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
+  */
 };
 
-const searchManga = async (req: Request, res: Response) => {
-  if (!req.body.name) return res.status(400).send("Dados inválidos!");
-  const { name } = req.body;
-
-  try {
-    const manga = await mangaModel.find({
-      name: { $regex: name, $options: "i" },
-    });
-
-    if (manga === null || !manga || manga.length === 0)
-      return res.status(200).json({ error: "Nenhum resultado encontrado." });
-
-    const mangaData = manga.map((i) => {
-      return {
-        id: i._id,
-        name: i.name,
-        lastChapter: i.chapters[0] ? i.chapters[0].number : "0",
-        source: i.chapters[0] ? i.chapters[0].source : "0",
-      };
-    });
-
-    res.status(200).json({ data: mangaData });
-  } catch (error) {
-    const err = error as AxiosError;
-    res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
-  }
-};
-
-export { deleteFollowManga, followNewManga, followingData, searchManga };
+export { getMangas, newManga, updateManga };

@@ -1,9 +1,14 @@
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 
-const handleRefreshToken = (req: Request, res: Response) => {
+const secret = process.env.SECRET ?? "secret";
+const refreshSecret = process.env.REFRESH_SECRET ?? "secret";
+
+const refreshToken = (req: Request, res: Response) => {
+  if (!process.env.REFRESH_SECRET || !process.env.SECRET)
+    return res.status(500).send("Erro no servidor.");
+
   const cookies = req.cookies;
 
   if (!cookies?.jwt) return res.sendStatus(401);
@@ -11,17 +16,17 @@ const handleRefreshToken = (req: Request, res: Response) => {
   const refreshToken = cookies.jwt;
   res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
 
-  jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, decoded) => {
+  jwt.verify(refreshToken, secret, (err: any, decoded: any) => {
     if (err) {
       return res.status(406).json({ message: "Refresh Token expired" });
     } else {
       const { userEmail } = decoded;
-      const accessToken = jwt.sign({ userEmail }, process.env.SECRET, {
-        expiresIn: "10m",
+      const accessToken = jwt.sign({ userEmail }, secret, {
+        expiresIn: 10 * 60,
       });
 
-      const refreshToken = jwt.sign({ userEmail }, process.env.REFRESH_SECRET, {
-        expiresIn: "15m",
+      const refreshToken = jwt.sign({ userEmail }, refreshSecret, {
+        expiresIn: 15 * 60,
       });
 
       res.cookie("jwt", refreshToken, {
@@ -36,4 +41,4 @@ const handleRefreshToken = (req: Request, res: Response) => {
   });
 };
 
-module.exports = { handleRefreshToken };
+export { refreshToken };
