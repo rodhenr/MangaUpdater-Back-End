@@ -17,7 +17,8 @@ const newFollow = async (req: Request | any, res: Response) => {
 
   try {
     session.startTransaction();
-    //Procura pelo item e pelo usuário na DB
+
+    //Verificações na DB
     const sourceObj = isValidObjectId(sourceId);
     const mangaObj = isValidObjectId(mangaId);
     if (!sourceObj || !mangaObj) return res.status(400).send("IDs inválidas.");
@@ -27,6 +28,8 @@ const newFollow = async (req: Request | any, res: Response) => {
       email: userEmail,
     });
     if (!user) return res.status(404).send("Usuário não encontrado.");
+    const source = await sourceModel.findById(sourceId);
+    if (!source) return res.status(404).send("Source não encontrada.");
 
     //Verifica se o usuário já está seguindo o mangá em questão
     const isFollow = user.following.some((i) => String(i.mangaId) === mangaId);
@@ -84,7 +87,7 @@ const updateFollow = async (req: Request | any, res: Response) => {
     //Verifica se o usuário já está seguindo o mangá em questão
     const isFollow = user.following.some((i) => String(i.mangaId) === mangaId);
     if (!isFollow)
-      return res.status(400).send("Você não está seguindo este mangá!");
+      return res.status(400).send("Você não está seguindo este mangá.");
 
     let followData: IFollowing[];
 
@@ -153,7 +156,7 @@ const deleteFollow = async (req: Request | any, res: Response) => {
     //Verifica se o usuário já está seguindo o mangá em questão
     const isFollow = user.following.some((i) => String(i.mangaId) === mangaId);
     if (!isFollow)
-      return res.status(400).send("Ops...! Você não está seguindo este mangá!");
+      return res.status(400).send("Você não está seguindo este mangá.");
 
     //Atualiza a DB
     const followData: IFollowing[] = user.following.filter(
@@ -173,33 +176,4 @@ const deleteFollow = async (req: Request | any, res: Response) => {
   }
 };
 
-const getFollows = async (req: Request, res: Response) => {
-  /*if (!req.body.name) return res.status(400).send("Dados inválidos!");
-  const { name } = req.body;
-
-  try {
-    const manga = await mangaModel.find({
-      name: { $regex: name, $options: "i" },
-    });
-
-    if (manga === null || !manga || manga.length === 0)
-      return res.status(200).json({ error: "Nenhum resultado encontrado." });
-
-    const mangaData = manga.map((i) => {
-      return {
-        id: i._id,
-        name: i.name,
-        lastChapter: i.chapters[0] ? i.chapters[0].number : "0",
-        source: i.chapters[0] ? i.chapters[0].source : "0",
-      };
-    });
-
-    res.status(200).json({ data: mangaData });
-  } catch (error) {
-    const err = error as AxiosError;
-    res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
-  }
-  */
-};
-
-export { deleteFollow, getFollows, newFollow, updateFollow };
+export { deleteFollow, newFollow, updateFollow };

@@ -2,7 +2,7 @@ import { mangaModel } from "../models/MangaModel";
 import { conn } from "../config/connection";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
-import { getMangaChapters, getMangaData } from "../utils/mangaInfo";
+import { getMangaData } from "../utils/mangaInfo";
 import { isValidObjectId } from "mongoose";
 import { sourceModel } from "../models/SourceModel";
 import { userModel } from "../models/UserModel";
@@ -15,7 +15,14 @@ const newManga = async (req: Request, res: Response) => {
   const session = await conn.startSession();
 
   try {
+    //CRIAR ALTERAÇÃO PARA QUE CRIAÇÃO SEJA APENAS DO MANGAUPDATES
     session.startTransaction();
+
+    //Verificações na DB
+    const sourceObj = isValidObjectId(sourceId);
+    if (!sourceObj) return res.status(400).send("IDs inválidas.");
+    const source = await sourceModel.findById(sourceId);
+    if (!source) return res.status(404).send("Source não encontrada.");
 
     //Verifica se já existe na DB
     const isNew = await mangaModel.findOne({
@@ -51,6 +58,7 @@ const updateManga = async (req: Request, res: Response) => {
 
   try {
     session.startTransaction();
+
     //Verifica se a sourceId é válida e se existe na DB
     const obj = isValidObjectId(sourceId);
     if (!obj) return res.status(400).send("SourceId inválida.");
@@ -65,7 +73,7 @@ const updateManga = async (req: Request, res: Response) => {
     });
     if (!manga) return res.status(400).send("Item não localizado.");
 
-    //Busca os dados do novo capítulo
+    //Busca os dados
     const mangaInfoData = await getMangaData(linkId, sourceId);
 
     //Procura por algum capítulo anterior da source passada via parâmetro
@@ -80,14 +88,14 @@ const updateManga = async (req: Request, res: Response) => {
     }
 
     //Não atualiza a DB se o número do capítulo é o mesmo
-    if (hasChapter[0].lastChapter === mangaInfoData.sources[0].lastChapter) {
+    if (hasChapter[0].lastChapter === mangaInfoData.sources.lastChapter) {
       return res.status(200).send("Registro já atualizado.");
     }
 
     //Atualiza a DB se o número do capítulo é diferente do cadastrado
     const filterSource = manga.sources.filter((i) => String(i.id) !== sourceId);
     await mangaModel.findByIdAndUpdate(manga._id, {
-      sources: [mangaInfoData.sources[0], ...filterSource],
+      sources: [mangaInfoData.sources, ...filterSource],
     });
 
     session.endSession();
@@ -106,7 +114,6 @@ const updateManga = async (req: Request, res: Response) => {
 const getMangas = async (req: Request | any, res: Response) => {
   if (!req.userEmail) return res.status(400).send("Dados inválidos!");
 
-  //Recebe o parâmetro através do middleware que verifica o token
   const { userEmail } = req;
 
   const session = await conn.startSession();
@@ -135,7 +142,7 @@ const getMangas = async (req: Request | any, res: Response) => {
     //Atualiza todos itens
     const newData = await Promise.all(
       ids.map((i) => {
-        return getMangaChapters(i.linkId!, i.sourceId!);
+        return getMangaData(i.linkId!, i.sourceId!);
       })
     );
 
@@ -144,21 +151,21 @@ const getMangas = async (req: Request | any, res: Response) => {
       newData.map((i) =>
         mangaModel.updateOne(
           {
-            _id: i.mangaId,
-            "sources.lastChapter": i.chapter,
+            _id: i.sources.mangaId,
+            "sources.lastChapter": i.sources.chapter,
           },
           {
             $set: {
-              "sources.$.lastChapter": i.lastChapter,
-              "sources.$.date": i.date,
-              "sources.$.scan": i.scan,
+              "sources.$.lastChapter": i.sources.lastChapter,
+              "sources.$.date": i.sources.date,
+              "sources.$.scan": i.sources.scan,
             },
           }
         )
       )
     );
-    
-    //MELHORAR OS DADOS QUE VOLTAM PARA O USUARIO POIS ESTÁ PEGANDO OS DADOS ERRADOS
+
+    const userData = await userModel.findById(user._id);
 
     session.endSession();
     res.status(200).json({ data: newData });

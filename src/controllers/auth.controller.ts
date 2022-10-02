@@ -5,6 +5,9 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import "dotenv/config";
 
+const secret = process.env.SECRET ?? "secret"; // remover
+const refreshSecret = process.env.REFRESH_SECRET ?? "secret"; // remover
+
 const register = async (req: Request, res: Response) => {
   const { email, password, username } = req.body;
   const session = await conn.startSession();
@@ -52,10 +55,10 @@ const login = async (req: Request, res: Response) => {
 
     const userEmail = user.email;
 
-    const accessToken = jwt.sign({ userEmail }, process.env.SECRET, {
+    const accessToken = jwt.sign({ userEmail }, secret, {
       expiresIn: 60 * 60,
     });
-    const refreshToken = jwt.sign({ userEmail }, process.env.REFRESH_SECRET, {
+    const refreshToken = jwt.sign({ userEmail }, refreshSecret, {
       expiresIn: 60 * 60,
     });
 
@@ -75,4 +78,40 @@ const login = async (req: Request, res: Response) => {
   }
 };
 
-export { login, register };
+const refreshToken = (req: Request, res: Response) => {
+  if (!process.env.REFRESH_SECRET || !process.env.SECRET)
+    return res.status(500).send("Erro no servidor.");
+
+  const cookies = req.cookies;
+
+  if (!cookies?.jwt) return res.sendStatus(401);
+
+  const refreshToken = cookies.jwt;
+  res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
+  jwt.verify(refreshToken, refreshSecret, (err: any, decoded: any) => {
+    if (err) {
+      console.log(err);
+      return res.status(406).json("Refresh Token expired");
+    } else {
+      const { userEmail } = decoded;
+      const accessToken = jwt.sign({ userEmail }, secret, {
+        expiresIn: 10 * 60,
+      });
+
+      const refreshToken = jwt.sign({ userEmail }, refreshSecret, {
+        expiresIn: 15 * 60,
+      });
+
+      res.cookie("jwt", refreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({ accessToken });
+    }
+  });
+};
+
+export { login, register, refreshToken };
