@@ -1,5 +1,9 @@
-import { model, Schema } from "mongoose";
-import { ISource, sourcesSchema } from "./MangaModel";
+import { model, Schema, Types } from "mongoose";
+
+interface ISource {
+  id: Schema.Types.ObjectId;
+  linkId: string;
+}
 
 export interface IFollowing {
   mangaId: Schema.Types.ObjectId;
@@ -14,6 +18,14 @@ interface IUser {
   avatar: string;
   following: IFollowing[];
 }
+
+export const sourcesSchema = new Schema<ISource>(
+  {
+    id: { type: Types.ObjectId, required: true },
+    linkId: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 const followingSchema = new Schema<IFollowing>(
   {

@@ -3,6 +3,8 @@ import { userModel, IFollowing } from "../models/UserModel";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
 import { conn } from "../config/connection";
+import { isValidObjectId } from "mongoose";
+import { sourceModel } from "../models/SourceModel";
 
 const newFollow = async (req: Request | any, res: Response) => {
   if (!req.body.mangaId || !req.body.linkId || !req.body.sourceId)
@@ -15,24 +17,26 @@ const newFollow = async (req: Request | any, res: Response) => {
 
   try {
     session.startTransaction();
-
     //Procura pelo item e pelo usuário na DB
+    const sourceObj = isValidObjectId(sourceId);
+    const mangaObj = isValidObjectId(mangaId);
+    if (!sourceObj || !mangaObj) return res.status(400).send("IDs inválidas.");
     const manga = await mangaModel.findById(mangaId);
-    if (!manga) return res.status(404).send("Dados não encontrados.");
+    if (!manga) return res.status(404).send("Mangá não encontrado.");
     const user = await userModel.findOne({
       email: userEmail,
     });
-    if (!user) return res.status(404).send("Dados não encontrados.");
+    if (!user) return res.status(404).send("Usuário não encontrado.");
 
     //Verifica se o usuário já está seguindo o mangá em questão
-    const isFollow = user.following.some((i) => i.mangaId === mangaId);
+    const isFollow = user.following.some((i) => String(i.mangaId) === mangaId);
     if (isFollow)
       return res.status(400).send("Você já está seguindo este mangá!");
 
     //Atualiza a DB
     await userModel.findByIdAndUpdate(user._id, {
       following: [
-        { mangaId: mangaId, sources: [linkId, sourceId] },
+        { mangaId: mangaId, sources: [{ linkId, id: sourceId }] },
         ...user.following,
       ],
     });
@@ -42,6 +46,7 @@ const newFollow = async (req: Request | any, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    console.log(error);
     const err = error as AxiosError;
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
@@ -63,16 +68,21 @@ const updateFollow = async (req: Request | any, res: Response) => {
   try {
     session.startTransaction();
 
-    //Procura pelo item e pelo usuário na DB
+    //Verificações na DB
+    const sourceObj = isValidObjectId(sourceId);
+    const mangaObj = isValidObjectId(mangaId);
+    if (!sourceObj || !mangaObj) return res.status(400).send("IDs inválidas.");
     const manga = await mangaModel.findById(mangaId);
-    if (!manga) return res.status(404).send("Dados não encontrados.");
+    if (!manga) return res.status(404).send("Mangá não encontrado.");
     const user = await userModel.findOne({
       email: userEmail,
     });
-    if (!user) return res.status(404).send("Dados não encontrados.");
+    if (!user) return res.status(404).send("Usuário não encontrado.");
+    const source = await sourceModel.findById(sourceId);
+    if (!source) return res.status(404).send("Source não encontrada.");
 
     //Verifica se o usuário já está seguindo o mangá em questão
-    const isFollow = user.following.some((i) => i.mangaId === mangaId);
+    const isFollow = user.following.some((i) => String(i.mangaId) === mangaId);
     if (!isFollow)
       return res.status(400).send("Você não está seguindo este mangá!");
 
@@ -81,8 +91,8 @@ const updateFollow = async (req: Request | any, res: Response) => {
     //Executa a ação necessário
     if (action === "add") {
       followData = user.following.map((i) => {
-        const isNew = i.sources.every((j) => j.id !== sourceId);
-        if (i.mangaId !== mangaId || !isNew) {
+        const isNew = i.sources.every((j) => String(j.id) !== sourceId);
+        if (String(i.mangaId) !== mangaId || !isNew) {
           return i;
         } else {
           return {
@@ -93,11 +103,11 @@ const updateFollow = async (req: Request | any, res: Response) => {
       });
     } else if (action === "delete") {
       followData = user.following.map((i) => {
-        const isIn = i.sources.some((j) => j.id === sourceId);
-        if (i.mangaId !== mangaId || !isIn) {
+        const isIn = i.sources.some((j) => String(j.id) === sourceId);
+        if (String(i.mangaId) !== mangaId || !isIn) {
           return i;
         } else {
-          const newArray = i.sources.filter((k) => k.id !== sourceId);
+          const newArray = i.sources.filter((k) => String(k.id) !== sourceId);
           return { mangaId: i.mangaId, sources: [...newArray] };
         }
       });
@@ -130,29 +140,31 @@ const deleteFollow = async (req: Request | any, res: Response) => {
   try {
     session.startTransaction();
 
-    //Procura pelo item e pelo usuário na DB
+    //Verificações na DB
+    const mangaObj = isValidObjectId(mangaId);
+    if (!mangaObj) return res.status(400).send("IDs inválidas.");
     const manga = await mangaModel.findById(mangaId);
-    if (!manga) return res.status(404).send("Dados não encontrados.");
+    if (!manga) return res.status(404).send("Mangá não encontrado.");
     const user = await userModel.findOne({
       email: userEmail,
     });
-    if (!user) return res.status(404).send("Dados não encontrados.");
+    if (!user) return res.status(404).send("Usuário não encontrado.");
 
     //Verifica se o usuário já está seguindo o mangá em questão
-    const isFollow = user.following.some((i) => i.mangaId === mangaId);
+    const isFollow = user.following.some((i) => String(i.mangaId) === mangaId);
     if (!isFollow)
-      return res.status(400).send("Você não está seguindo este mangá!");
+      return res.status(400).send("Ops...! Você não está seguindo este mangá!");
 
     //Atualiza a DB
     const followData: IFollowing[] = user.following.filter(
-      (i) => i.mangaId !== mangaId
+      (i) => String(i.mangaId) !== mangaId
     );
     await userModel.findByIdAndUpdate(user._id, {
       following: [...followData],
     });
 
     session.endSession();
-    return res.status(200).send("Parou de seguir!");
+    return res.sendStatus(200);
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
