@@ -3,6 +3,6 @@ import { getSearch } from "../controllers/search.controller";
 
 const searchRoutes = Express.Router();
 
-searchRoutes.route("/auth/login").get(getSearch);
+searchRoutes.route("/api/search").get(getSearch);
 
 export default searchRoutes;

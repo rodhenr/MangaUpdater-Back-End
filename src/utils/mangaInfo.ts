@@ -11,16 +11,9 @@ export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
       $elemMatch: { linkId: id, id: sourceId },
     },
   });
-
-  if (!mangaInfo) throw Error();
   if (!sourceData) throw Error();
 
-  //MangaUpdate(www.mangaupdates.com)
-  //Tratar add (e.g. dmnckia)
-  //Tratar if(author === "")
-  //https://www.mangaupdates.com/series/${id}`;
   const url = sourceData.baseURL + id;
-
   const { data } = await axios.get(url);
   const $ = cheerio.load(data);
 
@@ -55,7 +48,7 @@ export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
   }
 
   const sources = {
-    mangaId: String(mangaInfo._id),
+    mangaId: mangaInfo ? String(mangaInfo._id) : "",
     chapter: mangaInfo?.sources[0].lastChapter ?? "",
     id: sourceData._id,
     linkId: id,
@@ -65,7 +58,13 @@ export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
   };
   const name = $(".releasestitle").text();
   const image = $(".sContent center img").prop("src");
-  let author = $("a[title='Author Info']").first().text();
+  let author;
+  if ($("a[href*='add_author']").length > 0) {
+    const text = $("a[href*='add_author']:first").parents().first().text();
+    author = text.replace("[Add]\n", "");
+  } else {
+    author = $("a[title='Author Info']").first().text();
+  }
 
   return {
     image,

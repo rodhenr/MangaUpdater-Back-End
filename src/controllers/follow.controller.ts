@@ -7,10 +7,10 @@ import { isValidObjectId } from "mongoose";
 import { sourceModel } from "../models/SourceModel";
 
 const newFollow = async (req: Request | any, res: Response) => {
-  if (!req.body.mangaId || !req.body.linkId || !req.body.sourceId)
+  if (!req.body.mangaId || !req.body.sourceId)
     return res.status(400).send("Dados inválidos!");
 
-  const { linkId, mangaId, sourceId } = req.body;
+  const { mangaId, sourceId } = req.body;
   const { userEmail } = req;
 
   const session = await conn.startSession();
@@ -35,6 +35,8 @@ const newFollow = async (req: Request | any, res: Response) => {
     const isFollow = user.following.some((i) => String(i.mangaId) === mangaId);
     if (isFollow)
       return res.status(400).send("Você já está seguindo este mangá!");
+
+    const linkId = manga.sources.filter((i) => String(i.id) === sourceId)[0].linkId;
 
     //Atualiza a DB
     await userModel.findByIdAndUpdate(user._id, {
