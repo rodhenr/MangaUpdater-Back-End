@@ -8,8 +8,6 @@ import { sourceModel } from "../models/SourceModel";
 import { userModel } from "../models/UserModel";
 
 const newManga = async (req: Request, res: Response) => {
-  if (!req.body.linkId || !req.body.sourceId)
-    return res.status(400).send("Dados inválidos!");
   const { linkId, sourceId } = req.body;
 
   const session = await conn.startSession();
@@ -44,14 +42,11 @@ const newManga = async (req: Request, res: Response) => {
     const err = error as AxiosError;
     if (err.response?.status === 404)
       return res.status(400).send("ID inválida!");
-    console.log(error);
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
 
 const updateManga = async (req: Request, res: Response) => {
-  if (!req.body.linkId || !req.body.sourceId)
-    return res.status(400).send("Dados inválidos!");
   const { linkId, sourceId } = req.body;
 
   const session = await conn.startSession();
@@ -104,7 +99,6 @@ const updateManga = async (req: Request, res: Response) => {
     await session.abortTransaction();
     session.endSession();
     const err = error as AxiosError;
-    console.log(error);
     if (err.response?.status === 404)
       return res.status(400).send("ID inválida!");
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
@@ -112,8 +106,6 @@ const updateManga = async (req: Request, res: Response) => {
 };
 
 const getMangas = async (req: Request | any, res: Response) => {
-  if (!req.userEmail) return res.status(400).send("Dados inválidos!");
-
   const { userEmail } = req;
 
   const session = await conn.startSession();
@@ -172,7 +164,6 @@ const getMangas = async (req: Request | any, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    const err = error as AxiosError;
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };

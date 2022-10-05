@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import { AxiosError } from "axios";
 
 const getSearch = async (req: Request, res: Response) => {
-  if (!req.query.word) return res.status(400).send("Dados inválidos!");
   const { word } = req.query;
 
   try {

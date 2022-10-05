@@ -7,9 +7,6 @@ import { isValidObjectId } from "mongoose";
 import { sourceModel } from "../models/SourceModel";
 
 const newFollow = async (req: Request | any, res: Response) => {
-  if (!req.body.mangaId || !req.body.sourceId)
-    return res.status(400).send("Dados inválidos!");
-
   const { mangaId, sourceId } = req.body;
   const { userEmail } = req;
 
@@ -36,7 +33,8 @@ const newFollow = async (req: Request | any, res: Response) => {
     if (isFollow)
       return res.status(400).send("Você já está seguindo este mangá!");
 
-    const linkId = manga.sources.filter((i) => String(i.id) === sourceId)[0].linkId;
+    const linkId = manga.sources.filter((i) => String(i.id) === sourceId)[0]
+      .linkId;
 
     //Atualiza a DB
     await userModel.findByIdAndUpdate(user._id, {
@@ -51,21 +49,11 @@ const newFollow = async (req: Request | any, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.log(error);
-    const err = error as AxiosError;
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
 
 const updateFollow = async (req: Request | any, res: Response) => {
-  if (
-    !req.body.action ||
-    !req.body.mangaId ||
-    !req.body.linkId ||
-    !req.body.sourceId
-  )
-    return res.status(400).send("Dados inválidos!");
-
   const { action, linkId, mangaId, sourceId } = req.body;
   const { userEmail } = req;
 
@@ -130,14 +118,11 @@ const updateFollow = async (req: Request | any, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    const err = error as AxiosError;
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
 
 const deleteFollow = async (req: Request | any, res: Response) => {
-  if (!req.body.mangaId) return res.status(400).send("Dados inválidos!");
-
   const { mangaId } = req.body;
   const { userEmail } = req;
 
@@ -173,7 +158,6 @@ const deleteFollow = async (req: Request | any, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    const err = error as AxiosError;
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
