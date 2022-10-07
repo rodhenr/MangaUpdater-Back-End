@@ -1,10 +1,9 @@
-import { userModel } from "../models/UserModel";
 import { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 dotenv.config();
 
 const verifyNewFollow = async (
-  req: Request,
+  req: Request | any,
   res: Response,
   next: NextFunction
 ) => {
@@ -15,7 +14,7 @@ const verifyNewFollow = async (
 };
 
 const verifyUpdateFollow = async (
-  req: Request,
+  req: Request | any,
   res: Response,
   next: NextFunction
 ) => {
@@ -31,7 +30,7 @@ const verifyUpdateFollow = async (
 };
 
 const verifyDeleteFollow = async (
-  req: Request,
+  req: Request | any,
   res: Response,
   next: NextFunction
 ) => {
@@ -39,7 +38,7 @@ const verifyDeleteFollow = async (
 };
 
 const verifyNewManga = async (
-  req: Request,
+  req: Request | any,
   res: Response,
   next: NextFunction
 ) => {
@@ -50,7 +49,7 @@ const verifyNewManga = async (
 };
 
 const verifyUpdateManga = async (
-  req: Request,
+  req: Request | any,
   res: Response,
   next: NextFunction
 ) => {
@@ -61,7 +60,7 @@ const verifyUpdateManga = async (
 };
 
 const verifyGetManga = async (
-  req: Request,
+  req: Request | any,
   res: Response,
   next: NextFunction
 ) => {

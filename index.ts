@@ -11,6 +11,8 @@ dotenv.config({ path: __dirname + "/.env" });
 const port = process.env.PORT;
 
 const app: Express = express();
+app.options("*", cors());
+app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -18,7 +20,6 @@ app.use(authRoutes);
 app.use(followRoutes);
 app.use(mangaRoutes);
 app.use(searchRoutes);
-app.use(cors({ credentials: true, origin: true }));
 
 app.listen(port, () => {
   console.log(`Server ON! Listening port ${port}...`);

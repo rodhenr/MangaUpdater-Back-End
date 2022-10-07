@@ -157,10 +157,8 @@ const getMangas = async (req: Request | any, res: Response) => {
       )
     );
 
-    const userData = await userModel.findById(user._id);
-
     session.endSession();
-    res.status(200).json({ data: newData });
+    res.status(200).json(newData);
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
