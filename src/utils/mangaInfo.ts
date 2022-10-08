@@ -35,18 +35,6 @@ export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
   const realDate = new Date(today.getTime());
   realDate.setDate(today.getDate() - daysAgo);
 
-  function padTo2Digits(num: Number) {
-    return num.toString().padStart(2, "0");
-  }
-
-  function formatDate(date: Date) {
-    return [
-      date.getFullYear(),
-      padTo2Digits(date.getMonth() + 1),
-      padTo2Digits(date.getDate()),
-    ].join("-");
-  }
-
   const sources = {
     mangaId: mangaInfo ? String(mangaInfo._id) : "",
     chapter: mangaInfo?.sources[0].lastChapter ?? "",
@@ -54,7 +42,7 @@ export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
     linkId: id,
     lastChapter: chapterNumber,
     scan: chapterScan,
-    date: new Date(formatDate(realDate)),
+    date: new Date(realDate),
   };
   const name = $(".releasestitle").text();
   const image = $(".sContent center img").prop("src");

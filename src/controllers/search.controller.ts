@@ -4,7 +4,7 @@ import { AxiosError } from "axios";
 
 const getSearch = async (req: Request, res: Response) => {
   const { word } = req.query;
-
+  console.log(word);
   try {
     const manga = await mangaModel.find({
       name: { $regex: word, $options: "i" },
@@ -22,7 +22,7 @@ const getSearch = async (req: Request, res: Response) => {
       };
     });
 
-    res.status(200).json({ data: mangaData });
+    res.status(200).json(mangaData);
   } catch (error) {
     const err = error as AxiosError;
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");

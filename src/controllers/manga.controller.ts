@@ -157,8 +157,25 @@ const getMangas = async (req: Request | any, res: Response) => {
       )
     );
 
+    const to2Digits = (num: number) => {
+      return num.toString().padStart(2, "0");
+    };
+
+    const formatDate = (d: Date) => {
+      return [
+        to2Digits(d.getDate()),
+        to2Digits(d.getMonth() + 1),
+        d.getFullYear(),
+      ].join("/");
+    };
+
+    //order
+    const dataByDate = newData.sort(function (a, b) {
+      return b.sources.date.getTime() - a.sources.date.getTime();
+    });
+
     session.endSession();
-    res.status(200).json(newData);
+    res.status(200).json(dataByDate);
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
