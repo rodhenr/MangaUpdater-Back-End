@@ -1,5 +1,6 @@
 import Express from "express";
 import {
+  getMangaModal,
   getMangas,
   newManga,
   updateManga,
@@ -7,6 +8,7 @@ import {
 import {
   verifyNewManga,
   verifyGetManga,
+  verifyGetMangaModal,
   verifyUpdateManga,
 } from "../middlewares/verifyId.middleware";
 import verifyToken from "../middlewares/verifyJWT.middleware";
@@ -18,5 +20,9 @@ mangaRoutes
   .get(verifyToken, verifyGetManga, getMangas)
   .post(verifyToken, verifyNewManga, newManga)
   .patch(verifyToken, verifyUpdateManga, updateManga);
+
+mangaRoutes
+  .route("/api/manga/modal")
+  .get(verifyToken, verifyGetMangaModal, getMangaModal);
 
 export default mangaRoutes;

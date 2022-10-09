@@ -69,6 +69,16 @@ const verifyGetManga = async (
   next();
 };
 
+const verifyGetMangaModal = async (
+  req: Request | any,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.query.mangaId) return res.status(400).send("Dados inválidos!");
+
+  next();
+};
+
 const verifyGetSearch = async (
   req: Request,
   res: Response,
@@ -86,5 +96,6 @@ export {
   verifyUpdateManga,
   verifyNewManga,
   verifyGetManga,
+  verifyGetMangaModal,
   verifyGetSearch,
 };

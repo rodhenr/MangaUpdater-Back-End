@@ -8,11 +8,10 @@ const verifyToken = (req: Request | any, res: Response, next: NextFunction) => {
 
   const authHeader = req.headers.authorization;
 
-  if (!authHeader)
-    return res.status(401).json({ message: "Nenhum token encontrado." });
+  if (!authHeader) return res.status(401).send("Nenhum token encontrado.");
 
   if (!authHeader.startsWith("Bearer "))
-    return res.status(401).json({ message: "Nenhum token encontrado." });
+    return res.status(401).send("Nenhum token encontrado.");
 
   const token = authHeader.split(" ")[1];
 

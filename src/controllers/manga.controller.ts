@@ -157,18 +157,6 @@ const getMangas = async (req: Request | any, res: Response) => {
       )
     );
 
-    const to2Digits = (num: number) => {
-      return num.toString().padStart(2, "0");
-    };
-
-    const formatDate = (d: Date) => {
-      return [
-        to2Digits(d.getDate()),
-        to2Digits(d.getMonth() + 1),
-        d.getFullYear(),
-      ].join("/");
-    };
-
     //order
     const dataByDate = newData.sort(function (a, b) {
       return b.sources.date.getTime() - a.sources.date.getTime();
@@ -183,4 +171,36 @@ const getMangas = async (req: Request | any, res: Response) => {
   }
 };
 
-export { getMangas, newManga, updateManga };
+const getMangaModal = async (req: Request | any, res: Response) => {
+  const { mangaId } = req.body;
+  const { userEmail } = req;
+
+  try {
+    const obj = isValidObjectId(mangaId);
+    if (!obj) return res.status(400).send("ID inválido.");
+
+    const manga = await mangaModel.findById(mangaId);
+    if (!manga) return res.status(400).send("Não encontrado.");
+
+    const user = await userModel.findOne({ email: userEmail });
+    if (!user) return res.status(404).send("Usuário não encontrado");
+
+    const isFollow = user.following.filter(
+      (i) => String(i.mangaId) === mangaId
+    );
+
+    res.status(200).json({
+      data: {
+        name: manga.name,
+        author: manga.author,
+        image: manga.image,
+        sources: manga.sources,
+        follow: isFollow.length > 0 ? true : false,
+      },
+    });
+  } catch (error) {
+    res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
+  }
+};
+
+export { getMangaModal, getMangas, newManga, updateManga };

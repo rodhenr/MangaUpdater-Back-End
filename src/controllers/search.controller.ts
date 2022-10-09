@@ -4,14 +4,14 @@ import { AxiosError } from "axios";
 
 const getSearch = async (req: Request, res: Response) => {
   const { word } = req.query;
-  console.log(word);
+  
   try {
     const manga = await mangaModel.find({
       name: { $regex: word, $options: "i" },
     });
 
     if (manga === null || !manga || manga.length === 0)
-      return res.status(200).send("Nenhum resultado encontrado.");
+      return res.status(200).json([]);
 
     const mangaData = manga.map((i) => {
       return {
