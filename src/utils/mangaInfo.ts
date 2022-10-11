@@ -5,6 +5,9 @@ import { ObjectId } from "mongoose";
 import { mangaModel } from "../models/MangaModel";
 
 export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
+  //RESOLVER CASO DE MANGA SEM CAPITULO
+  //EXEMPLO y11s57s
+
   const sourceData = await sourceModel.findById(sourceId);
   const mangaInfo = await mangaModel.findOne({
     sources: {

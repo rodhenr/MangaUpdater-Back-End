@@ -108,9 +108,11 @@ const updateFollow = async (req: Request | any, res: Response) => {
       return res.status(400).send("Ação inválida!");
     }
 
+    const filteredFollowData = followData.filter((i) => i.sources.length > 0);
+
     //Atualiza a DB
     await userModel.findByIdAndUpdate(user._id, {
-      following: [...followData],
+      following: [...filteredFollowData],
     });
 
     session.endSession();

@@ -166,19 +166,17 @@ const getMangas = async (req: Request | any, res: Response) => {
     res.status(200).json(dataByDate);
   } catch (error) {
     await session.abortTransaction();
+    console.log(error);
     session.endSession();
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
 
 const getMangaModal = async (req: Request | any, res: Response) => {
-  const { mangaId } = req.body;
+  const { mangaId } = req.query;
   const { userEmail } = req;
 
   try {
-    const obj = isValidObjectId(mangaId);
-    if (!obj) return res.status(400).send("ID inválido.");
-
     const manga = await mangaModel.findById(mangaId);
     if (!manga) return res.status(400).send("Não encontrado.");
 
@@ -191,6 +189,7 @@ const getMangaModal = async (req: Request | any, res: Response) => {
 
     res.status(200).json({
       data: {
+        id: manga._id,
         name: manga.name,
         author: manga.author,
         image: manga.image,
