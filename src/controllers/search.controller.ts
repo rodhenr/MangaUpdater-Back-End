@@ -4,7 +4,7 @@ import { AxiosError } from "axios";
 
 const getSearch = async (req: Request, res: Response) => {
   const { word } = req.query;
-  
+
   try {
     const manga = await mangaModel.find({
       name: { $regex: word, $options: "i" },

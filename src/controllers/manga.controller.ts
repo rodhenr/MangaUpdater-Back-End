@@ -166,7 +166,6 @@ const getMangas = async (req: Request | any, res: Response) => {
     res.status(200).json(dataByDate);
   } catch (error) {
     await session.abortTransaction();
-    console.log(error);
     session.endSession();
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
@@ -187,16 +186,16 @@ const getMangaModal = async (req: Request | any, res: Response) => {
       (i) => String(i.mangaId) === mangaId
     );
 
-    res.status(200).json({
-      data: {
-        id: manga._id,
-        name: manga.name,
-        author: manga.author,
-        image: manga.image,
-        sources: manga.sources,
-        follow: isFollow.length > 0 ? true : false,
-      },
-    });
+    const data = {
+      id: manga._id,
+      name: manga.name,
+      author: manga.author,
+      image: manga.image,
+      sources: manga.sources,
+      follow: isFollow.length > 0 ? true : false,
+    };
+
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
