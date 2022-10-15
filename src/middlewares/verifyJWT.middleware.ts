@@ -7,7 +7,6 @@ const verifyToken = (req: Request | any, res: Response, next: NextFunction) => {
     return res.status(500).send("Erro no servidor.");
 
   const authHeader = req.headers.authorization;
-
   if (!authHeader) return res.status(401).send("Nenhum token encontrado.");
 
   if (!authHeader.startsWith("Bearer "))

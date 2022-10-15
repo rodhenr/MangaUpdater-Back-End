@@ -17,12 +17,12 @@ export const getMangaData = async (
   if (!sourceData) throw Error();
 
   const urlSource = sourceData.baseURL + id;
-  const urlMangaDex = `https://mangalivre.net/manga/overlord/1936`;
+  const baseUrlML = "https://mangalivre.net/manga/";
+  const urlML = baseUrlML + mdID;
   const { data } = await axios.get(urlSource);
-  const { data: dataMD } = await axios.get(urlMangaDex);
-  console.log(dataMD);
+  const { data: dataML } = await axios.get(urlML);
   const $ = cheerio.load(data);
-  const $md = cheerio.load(dataMD);
+  const $ml = cheerio.load(dataML);
 
   let chapterNumber: string;
   if ($("div.sContent:contains('v.')").length > 0) {
@@ -52,9 +52,7 @@ export const getMangaData = async (
     date: new Date(realDate),
   };
   const name = $(".releasestitle").text();
-  console.log();
-  const image = $md("img[data-v-46420996]").attr("src");
-  console.log(image);
+  const image = $ml(".cover").eq(1).prop("src");
   let author;
   if ($("a[href*='add_author']").length > 0) {
     const text = $("a[href*='add_author']:first").parents().first().text();
