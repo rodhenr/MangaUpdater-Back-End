@@ -7,6 +7,7 @@ interface ISource {
 
 export interface IFollowing {
   mangaId: Schema.Types.ObjectId;
+  mdID: string;
   sources: ISource[];
 }
 
@@ -30,6 +31,7 @@ export const sourcesSchema = new Schema<ISource>(
 const followingSchema = new Schema<IFollowing>(
   {
     mangaId: { type: Schema.Types.ObjectId, required: true },
+    mdID: { type: String, required: true },
     sources: { type: [sourcesSchema], required: true, default: [] },
   },
   { _id: false }

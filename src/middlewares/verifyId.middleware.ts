@@ -42,7 +42,7 @@ const verifyNewManga = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.body.linkId || !req.body.sourceId)
+  if (!req.body.linkId || !req.body.sourceId || !req.body.mdID)
     return res.status(400).send("Dados inválidos!");
 
   next();
@@ -53,7 +53,7 @@ const verifyUpdateManga = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.body.linkId || !req.body.sourceId)
+  if (!req.body.linkId || !req.body.sourceId || !req.body.mdID)
     return res.status(400).send("Dados inválidos!");
 
   next();

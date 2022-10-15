@@ -1,4 +1,4 @@
-import { Document, model, Schema, Types } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 export interface ISource {
   id: Schema.Types.ObjectId;
@@ -10,6 +10,7 @@ export interface ISource {
 
 export interface IManga {
   _id: Schema.Types.ObjectId;
+  mdID: string;
   image: string;
   name: string;
   author: string;
@@ -27,6 +28,7 @@ export const sourcesSchema = new Schema<ISource>(
 );
 
 const mangaSchema = new Schema<IManga>({
+  mdID: { type: String, required: true },
   image: { type: String, required: true },
   name: { type: String, required: true },
   author: { type: String, required: true },

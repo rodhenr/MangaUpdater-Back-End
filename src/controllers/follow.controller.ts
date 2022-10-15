@@ -39,7 +39,11 @@ const newFollow = async (req: Request | any, res: Response) => {
     //Atualiza a DB
     await userModel.findByIdAndUpdate(user._id, {
       following: [
-        { mangaId: mangaId, sources: [{ linkId, id: sourceId }] },
+        {
+          mangaId: mangaId,
+          mdID: manga.mdID,
+          sources: [{ linkId, id: sourceId }],
+        },
         ...user.following,
       ],
     });
@@ -90,6 +94,7 @@ const updateFollow = async (req: Request | any, res: Response) => {
         } else {
           return {
             mangaId: i.mangaId,
+            mdID: i.mdID,
             sources: [{ id: sourceId, linkId }, ...i.sources],
           };
         }
@@ -101,7 +106,7 @@ const updateFollow = async (req: Request | any, res: Response) => {
           return i;
         } else {
           const newArray = i.sources.filter((k) => String(k.id) !== sourceId);
-          return { mangaId: i.mangaId, sources: [...newArray] };
+          return { mangaId: i.mangaId, mdID: i.mdID, sources: [...newArray] };
         }
       });
     } else {

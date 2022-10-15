@@ -8,7 +8,7 @@ import { sourceModel } from "../models/SourceModel";
 import { userModel } from "../models/UserModel";
 
 const newManga = async (req: Request, res: Response) => {
-  const { linkId, sourceId } = req.body;
+  const { mdID, linkId, sourceId } = req.body;
 
   const session = await conn.startSession();
 
@@ -23,15 +23,11 @@ const newManga = async (req: Request, res: Response) => {
     if (!source) return res.status(404).send("Source não encontrada.");
 
     //Verifica se já existe na DB
-    const isNew = await mangaModel.findOne({
-      sources: {
-        $elemMatch: { linkId, id: sourceId },
-      },
-    });
+    const isNew = await mangaModel.findOne({ mdID });
     if (isNew) return res.status(400).send("ID já cadastrada!");
 
     // Cadastra o novo item na DB
-    const mangaInfoData = await getMangaData(linkId, sourceId);
+    const mangaInfoData = await getMangaData(mdID, linkId, sourceId);
     await mangaModel.create(mangaInfoData);
 
     session.endSession();
@@ -47,7 +43,7 @@ const newManga = async (req: Request, res: Response) => {
 };
 
 const updateManga = async (req: Request, res: Response) => {
-  const { linkId, sourceId } = req.body;
+  const { mdID, linkId, sourceId } = req.body;
 
   const session = await conn.startSession();
 
@@ -61,15 +57,11 @@ const updateManga = async (req: Request, res: Response) => {
     if (!source) return res.status(400).send("Source não localizada.");
 
     //Verifica se já existe na DB
-    const manga = await mangaModel.findOne({
-      sources: {
-        $elemMatch: { linkId, id: sourceId },
-      },
-    });
+    const manga = await mangaModel.findOne({ mdID });
     if (!manga) return res.status(400).send("Item não localizado.");
 
     //Busca os dados
-    const mangaInfoData = await getMangaData(linkId, sourceId);
+    const mangaInfoData = await getMangaData(mdID, linkId, sourceId);
 
     //Procura por algum capítulo anterior da source passada via parâmetro
     const hasChapter = manga.sources.filter((i) => String(i.id) === sourceId);
@@ -122,11 +114,15 @@ const getMangas = async (req: Request | any, res: Response) => {
       .map((i) => {
         if (i.sources.length > 1) {
           const listSources = i.sources.map((j) => {
-            return { linkId: j.linkId, sourceId: j.id };
+            return { mdID: i.mdID, linkId: j.linkId, sourceId: j.id };
           });
           return { ...listSources };
         } else {
-          return { linkId: i.sources[0].linkId, sourceId: i.sources[0].id };
+          return {
+            mdID: i.mdID,
+            linkId: i.sources[0].linkId,
+            sourceId: i.sources[0].id,
+          };
         }
       })
       .flat();
@@ -134,7 +130,7 @@ const getMangas = async (req: Request | any, res: Response) => {
     //Atualiza todos itens
     const newData = await Promise.all(
       ids.map((i) => {
-        return getMangaData(i.linkId!, i.sourceId!);
+        return getMangaData(i.mdID!, i.linkId!, i.sourceId!);
       })
     );
 

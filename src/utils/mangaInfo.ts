@@ -4,21 +4,25 @@ import * as cheerio from "cheerio";
 import { ObjectId } from "mongoose";
 import { mangaModel } from "../models/MangaModel";
 
-export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
+export const getMangaData = async (
+  mdID: string,
+  id: string,
+  sourceId: string | ObjectId
+) => {
   //RESOLVER CASO DE MANGA SEM CAPITULO
   //EXEMPLO y11s57s
 
   const sourceData = await sourceModel.findById(sourceId);
-  const mangaInfo = await mangaModel.findOne({
-    sources: {
-      $elemMatch: { linkId: id, id: sourceId },
-    },
-  });
+  const mangaInfo = await mangaModel.findOne({ mdID });
   if (!sourceData) throw Error();
 
-  const url = sourceData.baseURL + id;
-  const { data } = await axios.get(url);
+  const urlSource = sourceData.baseURL + id;
+  const urlMangaDex = `https://mangalivre.net/manga/overlord/1936`;
+  const { data } = await axios.get(urlSource);
+  const { data: dataMD } = await axios.get(urlMangaDex);
+  console.log(dataMD);
   const $ = cheerio.load(data);
+  const $md = cheerio.load(dataMD);
 
   let chapterNumber: string;
   if ($("div.sContent:contains('v.')").length > 0) {
@@ -48,7 +52,9 @@ export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
     date: new Date(realDate),
   };
   const name = $(".releasestitle").text();
-  const image = $(".sContent center img").prop("src");
+  console.log();
+  const image = $md("img[data-v-46420996]").attr("src");
+  console.log(image);
   let author;
   if ($("a[href*='add_author']").length > 0) {
     const text = $("a[href*='add_author']:first").parents().first().text();
@@ -58,6 +64,7 @@ export const getMangaData = async (id: string, sourceId: string | ObjectId) => {
   }
 
   return {
+    mdID,
     image,
     name,
     author,
