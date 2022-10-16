@@ -1,34 +1,45 @@
-import { mangaModel } from "../models/MangaModel";
+import { mangaModel, ISource } from "../models/MangaModel";
 import { conn } from "../config/connection";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
-import { getMangaData } from "../utils/mangaInfo";
-import { isValidObjectId } from "mongoose";
-import { sourceModel } from "../models/SourceModel";
+import {
+  newMangaHelper,
+  updateMangaHelper,
+  updateManyHelper,
+} from "../utils/mangaInfo";
+import { isValidObjectId, ObjectId } from "mongoose";
 import { userModel } from "../models/UserModel";
 
+interface IUpdate {
+  mangaID: ObjectId;
+  sources: ISource;
+}
+
+// Cadastro de novo mangá, é necessário informar o pathID do MangaUpdates e opcionalmente o pathID do MangaLivre
 const newManga = async (req: Request, res: Response) => {
-  const { mdID, linkId, sourceId } = req.body;
+  const { muPathID, mlPathID } = req.body; //COLOCAR MLPATHID COMO OPCIONAL
 
   const session = await conn.startSession();
 
   try {
-    //CRIAR ALTERAÇÃO PARA QUE CRIAÇÃO SEJA APENAS DO MANGAUPDATES
     session.startTransaction();
 
-    //Verificações na DB
-    const sourceObj = isValidObjectId(sourceId);
-    if (!sourceObj) return res.status(400).send("IDs inválidas.");
-    const source = await sourceModel.findById(sourceId);
-    if (!source) return res.status(404).send("Source não encontrada.");
-
     //Verifica se já existe na DB
-    const isNew = await mangaModel.findOne({ mdID });
+    const isNew = await mangaModel.findOne({
+      sources: {
+        $elemMatch: { pathID: muPathID },
+      },
+    });
     if (isNew) return res.status(400).send("ID já cadastrada!");
 
     // Cadastra o novo item na DB
-    const mangaInfoData = await getMangaData(mdID, linkId, sourceId);
-    await mangaModel.create(mangaInfoData);
+    if (mlPathID) {
+      const newMangaData = await newMangaHelper(muPathID, mlPathID);
+      await mangaModel.create(newMangaData);
+    } else {
+      const newMangaData = await newMangaHelper(muPathID);
+      await mangaModel.create(newMangaData);
+    }
 
     session.endSession();
     res.status(200).send("Registro criado com sucesso!");
@@ -42,48 +53,28 @@ const newManga = async (req: Request, res: Response) => {
   }
 };
 
+//Atualiza um mangá em específico
 const updateManga = async (req: Request, res: Response) => {
-  const { mdID, linkId, sourceId } = req.body;
+  const { mangaID } = req.body;
 
   const session = await conn.startSession();
 
   try {
     session.startTransaction();
 
-    //Verifica se a sourceId é válida e se existe na DB
-    const obj = isValidObjectId(sourceId);
-    if (!obj) return res.status(400).send("SourceId inválida.");
-    const source = await sourceModel.findById(sourceId);
-    if (!source) return res.status(400).send("Source não localizada.");
+    //Verifica se o ID é válido
+    const obj = isValidObjectId(mangaID);
+    if (!obj) return res.status(400).send("ID inválida.");
 
     //Verifica se já existe na DB
-    const manga = await mangaModel.findOne({ mdID });
-    if (!manga) return res.status(400).send("Item não localizado.");
+    const manga = await mangaModel.findById(mangaID);
+    if (!manga) return res.status(400).send("Mangá não encontrado.");
 
     //Busca os dados
-    const mangaInfoData = await getMangaData(mdID, linkId, sourceId);
+    const updatedData = await updateMangaHelper(manga);
 
-    //Procura por algum capítulo anterior da source passada via parâmetro
-    const hasChapter = manga.sources.filter((i) => String(i.id) === sourceId);
-
-    //Atualiza a DB se não existir capítulo cadastrado
-    if (hasChapter.length === 0) {
-      await mangaModel.findByIdAndUpdate(manga._id, {
-        sources: [mangaInfoData.sources, ...manga.sources],
-      });
-      return res.status(200).send("Registro atualizado com sucesso!");
-    }
-
-    //Não atualiza a DB se o número do capítulo é o mesmo
-    if (hasChapter[0].lastChapter === mangaInfoData.sources.lastChapter) {
-      return res.status(200).send("Registro já atualizado.");
-    }
-
-    //Atualiza a DB se o número do capítulo é diferente do cadastrado
-    const filterSource = manga.sources.filter((i) => String(i.id) !== sourceId);
-    await mangaModel.findByIdAndUpdate(manga._id, {
-      sources: [mangaInfoData.sources, ...filterSource],
-    });
+    //Atualiza o mangá na DB
+    await mangaModel.findByIdAndUpdate({ _id: mangaID }, updatedData);
 
     session.endSession();
     res.sendStatus(200);
@@ -97,6 +88,7 @@ const updateManga = async (req: Request, res: Response) => {
   }
 };
 
+//Recebe a lista de mangás que um usuário em específico está seguindo
 const getMangas = async (req: Request | any, res: Response) => {
   const { userEmail } = req;
 
@@ -110,52 +102,43 @@ const getMangas = async (req: Request | any, res: Response) => {
     if (!user) return res.status(404).send("Usuário não encontrado");
 
     //Gera um objeto para cada item e source que o usuário segue
-    const ids = user.following
+    const mangaIDs = user.following
       .map((i) => {
-        if (i.sources.length > 1) {
-          const listSources = i.sources.map((j) => {
-            return { mdID: i.mdID, linkId: j.linkId, sourceId: j.id };
-          });
-          return { ...listSources };
-        } else {
-          return {
-            mdID: i.mdID,
-            linkId: i.sources[0].linkId,
-            sourceId: i.sources[0].id,
-          };
-        }
+        return i.mangaID;
       })
       .flat();
 
     //Atualiza todos itens
-    const newData = await Promise.all(
-      ids.map((i) => {
-        return getMangaData(i.mdID!, i.linkId!, i.sourceId!);
-      })
-    );
+    const updatedData = await updateManyHelper(mangaIDs);
 
     //Atualiza a BD
     await Promise.all(
-      newData.map((i) =>
-        mangaModel.updateOne(
-          {
-            _id: i.sources.mangaId,
-            "sources.lastChapter": i.sources.chapter,
-          },
-          {
-            $set: {
-              "sources.$.lastChapter": i.sources.lastChapter,
-              "sources.$.date": i.sources.date,
-              "sources.$.scan": i.sources.scan,
+      updatedData.map(
+        async (i) =>
+          await mangaModel.updateOne(
+            {
+              _id: i!.mangaID,
             },
-          }
-        )
+            {
+              $set: {
+                sources: i!.sources,
+              },
+            }
+          )
       )
     );
 
+    const finalData = await Promise.all(
+      updatedData.map(async (i) => {
+        const mData = await mangaModel.findById(i!.mangaID);
+
+        return { image: mData!.image, name: mData!.name, sources: i!.sources };
+      })
+    );
+
     //order
-    const dataByDate = newData.sort(function (a, b) {
-      return b.sources.date.getTime() - a.sources.date.getTime();
+    const dataByDate = finalData.sort(function (a, b) {
+      return b.sources[0].date.getTime() - a.sources[0].date.getTime();
     });
 
     session.endSession();
@@ -168,18 +151,18 @@ const getMangas = async (req: Request | any, res: Response) => {
 };
 
 const getMangaModal = async (req: Request | any, res: Response) => {
-  const { mangaId } = req.query;
+  const { mangaID } = req.query;
   const { userEmail } = req;
 
   try {
-    const manga = await mangaModel.findById(mangaId);
+    const manga = await mangaModel.findById(mangaID);
     if (!manga) return res.status(400).send("Não encontrado.");
 
     const user = await userModel.findOne({ email: userEmail });
     if (!user) return res.status(404).send("Usuário não encontrado");
 
     const isFollow = user.following.filter(
-      (i) => String(i.mangaId) === mangaId
+      (i) => String(i.mangaID) === mangaID
     );
 
     const data = {

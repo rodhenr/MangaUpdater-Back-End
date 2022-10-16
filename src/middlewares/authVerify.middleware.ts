@@ -8,7 +8,12 @@ const verifyRegister = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.body.email || !req.body.password || !req.body.username)
+  if (
+    !req.body.email ||
+    !req.body.password ||
+    !req.body.username ||
+    !req.body.language
+  )
     return res.status(400).send("Dados incompletos!");
 
   if (

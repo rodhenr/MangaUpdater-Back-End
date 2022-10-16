@@ -1,14 +1,18 @@
 import { model, Schema, Types } from "mongoose";
 
-interface ISource {
-  id: Schema.Types.ObjectId;
-  linkId: string;
+export interface ISource {
+  sourceID: Schema.Types.ObjectId;
+  pathID: string;
 }
 
 export interface IFollowing {
-  mangaId: Schema.Types.ObjectId;
-  mdID: string;
+  mangaID: Schema.Types.ObjectId;
   sources: ISource[];
+}
+
+export interface IUserConfig {
+  avatar: string;
+  language: string;
 }
 
 interface IUser {
@@ -16,23 +20,30 @@ interface IUser {
   username: string;
   password: string;
   email: string;
-  avatar: string;
+  config: IUserConfig;
   following: IFollowing[];
 }
 
 export const sourcesSchema = new Schema<ISource>(
   {
-    id: { type: Types.ObjectId, required: true },
-    linkId: { type: String, required: true },
+    sourceID: { type: Types.ObjectId, required: true },
+    pathID: { type: String, required: true },
   },
   { _id: false }
 );
 
 const followingSchema = new Schema<IFollowing>(
   {
-    mangaId: { type: Schema.Types.ObjectId, required: true },
-    mdID: { type: String, required: true },
+    mangaID: { type: Schema.Types.ObjectId, required: true },
     sources: { type: [sourcesSchema], required: true, default: [] },
+  },
+  { _id: false }
+);
+
+const userConfigSchema = new Schema<IUserConfig>(
+  {
+    avatar: { data: Buffer, contentType: String, default: "" },
+    language: { type: String, required: true },
   },
   { _id: false }
 );
@@ -41,7 +52,7 @@ const userSchema = new Schema<IUser>({
   username: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true },
-  avatar: { data: Buffer, contentType: String, default: "" },
+  config: { type: userConfigSchema, required: true },
   following: { type: [followingSchema], required: true, default: [] },
 });
 

@@ -9,7 +9,7 @@ const secret = process.env.SECRET ?? "secret"; // remover
 const refreshSecret = process.env.REFRESH_SECRET ?? "secret"; // remover
 
 const register = async (req: Request, res: Response) => {
-  const { email, password, username } = req.body;
+  const { email, password, username, language } = req.body;
   const session = await conn.startSession();
 
   try {
@@ -20,6 +20,7 @@ const register = async (req: Request, res: Response) => {
       username: username,
       password: hashedPassword,
       email: email,
+      config: { language },
     });
 
     session.endSession();

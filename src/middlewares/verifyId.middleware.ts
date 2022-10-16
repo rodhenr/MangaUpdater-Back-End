@@ -7,7 +7,7 @@ const verifyNewFollow = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.body.mangaId || !req.body.sourceId)
+  if (!req.body.mangaID || !req.body.sourceID)
     return res.status(400).send("Dados inválidos!");
 
   next();
@@ -42,8 +42,7 @@ const verifyNewManga = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.body.linkId || !req.body.sourceId || !req.body.mdID)
-    return res.status(400).send("Dados inválidos!");
+  if (!req.body.muPathID) return res.status(400).send("Dados inválidos!");
 
   next();
 };
@@ -53,8 +52,7 @@ const verifyUpdateManga = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.body.linkId || !req.body.sourceId || !req.body.mdID)
-    return res.status(400).send("Dados inválidos!");
+  if (!req.body.mangaID) return res.status(400).send("Dados inválidos!");
 
   next();
 };
@@ -74,7 +72,7 @@ const verifyGetMangaModal = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.query.mangaId) return res.status(400).send("Dados inválidos!");
+  if (!req.query.mangaID) return res.status(400).send("Dados inválidos!");
 
   next();
 };
