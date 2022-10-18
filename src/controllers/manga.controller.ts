@@ -128,17 +128,33 @@ const getMangas = async (req: Request | any, res: Response) => {
       )
     );
 
-    const finalData = await Promise.all(
+    //Faz uma nova query para pegar os dados atualizados
+    const uData = await Promise.all(
       updatedData.map(async (i) => {
         const mData = await mangaModel.findById(i!.mangaID);
 
-        return { image: mData!.image, name: mData!.name, sources: i!.sources };
+        const userSources = user.following.filter((i) => {
+          return String(i.mangaID) === String(mData!._id);
+        })[0].sources;
+
+        const mSources = userSources.map((i) => {
+          return mData?.sources.filter(
+            (j) => String(j.sourceID) === String(i.sourceID)
+          )[0];
+        });
+
+        return {
+          mangaID: mData!._id,
+          image: mData!.image,
+          name: mData!.name,
+          sources: mSources,
+        };
       })
     );
 
-    //order
-    const dataByDate = finalData.sort(function (a, b) {
-      return b.sources[0].date.getTime() - a.sources[0].date.getTime();
+    //Ordena os dados por data
+    const dataByDate = uData.sort(function (a, b) {
+      return b.sources[0]!.date.getTime() - a.sources[0]!.date.getTime();
     });
 
     session.endSession();
@@ -169,6 +185,7 @@ const getMangaModal = async (req: Request | any, res: Response) => {
       id: manga._id,
       name: manga.name,
       author: manga.author,
+      genres: manga.genres,
       image: manga.image,
       sources: manga.sources,
       follow: isFollow.length > 0 ? true : false,

@@ -1,7 +1,6 @@
 import { mangaModel } from "../models/MangaModel";
 import { userModel, IFollowing } from "../models/UserModel";
 import { Request, Response } from "express";
-import { AxiosError } from "axios";
 import { conn } from "../config/connection";
 import { isValidObjectId } from "mongoose";
 import { sourceModel } from "../models/SourceModel";
