@@ -125,6 +125,7 @@ const updateFollow = async (req: Request | any, res: Response) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    console.log(error);
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };

@@ -20,12 +20,12 @@ const verifyUpdateFollow = async (
 ) => {
   if (
     !req.body.action ||
-    !req.body.mangaId ||
-    !req.body.linkId ||
-    !req.body.sourceId
+    !req.body.mangaID ||
+    !req.body.pathID ||
+    !req.body.sourceID
   )
     return res.status(400).send("Dados inválidos!");
-
+    
   next();
 };
 

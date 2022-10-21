@@ -177,9 +177,41 @@ const getMangaModal = async (req: Request | any, res: Response) => {
     const user = await userModel.findOne({ email: userEmail });
     if (!user) return res.status(404).send("Usuário não encontrado");
 
-    const isFollow = user.following.filter(
+    const userSource = user.following.filter(
       (i) => String(i.mangaID) === mangaID
     );
+
+    const mangaSources = manga.sources.map((i) => {
+      let filter;
+
+      if (userSource.length === 0) {
+        filter = []
+      } else {
+        filter = userSource[0]?.sources.filter(
+          (j) => String(j.sourceID) === String(i.sourceID)
+        );
+      }
+
+      if (filter.length > 0) {
+        return {
+          sourceID: i.sourceID,
+          pathID: i.pathID,
+          chapter: i.chapter,
+          date: i.date,
+          scanlator: i.scanlator,
+          follow: true,
+        };
+      } else {
+        return {
+          sourceID: i.sourceID,
+          pathID: i.pathID,
+          chapter: i.chapter,
+          date: i.date,
+          scanlator: i.scanlator,
+          follow: false,
+        };
+      }
+    });
 
     const data = {
       id: manga._id,
@@ -187,12 +219,12 @@ const getMangaModal = async (req: Request | any, res: Response) => {
       author: manga.author,
       genres: manga.genres,
       image: manga.image,
-      sources: manga.sources,
-      follow: isFollow.length > 0 ? true : false,
+      sources: mangaSources,
     };
 
     res.status(200).json(data);
   } catch (error) {
+    console.log(error);
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };
