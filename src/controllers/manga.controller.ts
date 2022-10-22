@@ -10,9 +10,12 @@ import {
 import { isValidObjectId, ObjectId } from "mongoose";
 import { userModel } from "../models/UserModel";
 
-interface IUpdate {
-  mangaID: ObjectId;
-  sources: ISource;
+interface IManga {
+  image: string;
+  name: string;
+  author: string;
+  genres: string[];
+  sources: ISource[];
 }
 
 // Cadastro de novo mangá, é necessário informar o pathID do MangaUpdates e opcionalmente o pathID do MangaLivre
@@ -71,7 +74,7 @@ const updateManga = async (req: Request, res: Response) => {
     if (!manga) return res.status(400).send("Mangá não encontrado.");
 
     //Busca os dados
-    const updatedData = await updateMangaHelper(manga);
+    const updatedData: IManga = await updateMangaHelper(manga);
 
     //Atualiza o mangá na DB
     await mangaModel.findByIdAndUpdate({ _id: mangaID }, updatedData);
@@ -185,7 +188,7 @@ const getMangaModal = async (req: Request | any, res: Response) => {
       let filter;
 
       if (userSource.length === 0) {
-        filter = []
+        filter = [];
       } else {
         filter = userSource[0]?.sources.filter(
           (j) => String(j.sourceID) === String(i.sourceID)
@@ -224,7 +227,6 @@ const getMangaModal = async (req: Request | any, res: Response) => {
 
     res.status(200).json(data);
   } catch (error) {
-    console.log(error);
     res.status(500).send("Ops... Ocorreu um erro na sua requisição!");
   }
 };

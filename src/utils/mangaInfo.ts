@@ -30,7 +30,12 @@ export const newMangaHelper = async (muPath: string, mlPath?: string) => {
   //Faz a aquisição dos dados básicos
   let image, name, author, genres;
 
-  genres = ["teste", "teste"];
+  genres = $mu(".col-6.p-2.text:eq(1) .sContent:eq(1) u")
+    .map(function (index, item) {
+      return $mu(item).text();
+    })
+    .get()
+    .slice(0, -1);
   name = $mu(".releasestitle").text();
   image = $mu(".sContent center img").prop("src");
 
@@ -74,6 +79,11 @@ export const newMangaHelper = async (muPath: string, mlPath?: string) => {
     const { data: mlData } = await axios.get(mlURL);
     const $ml = cheerio.load(mlData);
 
+    genres = $ml(".tags li span")
+      .map(function (index, item) {
+        return $ml(item).text();
+      })
+      .get();
     image = $ml(".cover").eq(1).prop("src");
     /*
     const date = $ml(".chapter-date").first().text();
@@ -127,6 +137,7 @@ export const updateMangaHelper = async (manga: IManga) => {
   const ml = mangaSources.filter(
     (i) => String(i.sourceID) === String(mlSource._id)
   );
+
   const muPath = mu.length > 0 ? mu[0].pathID : "";
   const mlPath = ml.length > 0 ? ml[0].pathID : "";
   //Scrapping das sources
@@ -137,7 +148,14 @@ export const updateMangaHelper = async (manga: IManga) => {
   const $mu = cheerio.load(muData);
 
   //Faz a aquisição dos dados básicos
-  let image, name, author, genres;
+  let image: string, name: string, author: string, genres: string[];
+
+  genres = $mu(".col-6.p-2.text:eq(1) .sContent:eq(1) u")
+    .map(function (index, item) {
+      return $mu(item).text();
+    })
+    .get()
+    .slice(0, -1);
 
   name = $mu(".releasestitle").text();
   image = $mu(".sContent center img").prop("src");
@@ -150,7 +168,7 @@ export const updateMangaHelper = async (manga: IManga) => {
   }
 
   //MangaUpdates
-  let muSourceData, muChapter, muDate, muScan;
+  let muSourceData: ISource, muChapter, muDate, muScan;
   let mlSourceData = {};
 
   if ($mu("div.sContent:contains('v.')").length > 0) {
@@ -182,6 +200,11 @@ export const updateMangaHelper = async (manga: IManga) => {
     const { data: mlData } = await axios.get(mlURL);
     const $ml = cheerio.load(mlData);
 
+    genres = $ml(".tags li span")
+      .map(function (index, item) {
+        return $ml(item).text();
+      })
+      .get();
     image = $ml(".cover").eq(1).prop("src");
     /*
     const date = $ml(".chapter-date").first().text();
@@ -204,11 +227,15 @@ export const updateMangaHelper = async (manga: IManga) => {
     */
   }
 
+  //Criar um filtro para colocar a última atualização em primeiro lugar
+
   //Cria o array de sources
-  const finalSources =
+  const finalSources = [muSourceData];
+  /*const finalSources =
     Object.keys(mlSourceData).length > 0
       ? [muSourceData, mlSourceData]
       : [muSourceData];
+  */
 
   return {
     image,
@@ -311,6 +338,8 @@ export const updateManyHelper = async (ids: ObjectId[]) => {
           ? [muSourceData, mlSourceData]
           : [muSourceData];
       */
+     
+      //Criar um filtro para colocar a última atualização em primeiro lugar
       const finalSources = [muSourceData];
       return { mangaID: i, sources: finalSources };
     })

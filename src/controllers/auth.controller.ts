@@ -55,12 +55,13 @@ const login = async (req: Request, res: Response) => {
     if (!isMatch) return res.status(401).send("Login inválido!");
 
     const userEmail = user.email;
+    const userName = user.username;
 
-    const accessToken = jwt.sign({ userEmail }, secret, {
-      expiresIn: 60 * 60,
+    const accessToken = jwt.sign({ userEmail, userName }, secret, {
+      expiresIn: 10,
     });
-    const refreshToken = jwt.sign({ userEmail }, refreshSecret, {
-      expiresIn: 60 * 60,
+    const refreshToken = jwt.sign({ userEmail, userName }, refreshSecret, {
+      expiresIn: 15 * 60,
     });
 
     res.cookie("jwt", refreshToken, {
@@ -70,11 +71,10 @@ const login = async (req: Request, res: Response) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.json({ accessToken });
+    res.json({ accessToken, user: userName });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.log(err);
     res.status(500).send("Ops... Ocorreu um erro no servidor.");
   }
 };
@@ -91,15 +91,14 @@ const refreshToken = (req: Request, res: Response) => {
   res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
   jwt.verify(refreshToken, refreshSecret, (err: any, decoded: any) => {
     if (err) {
-      console.log(err);
       return res.status(406).json("Refresh Token expired");
     } else {
-      const { userEmail } = decoded;
-      const accessToken = jwt.sign({ userEmail }, secret, {
-        expiresIn: 10 * 60,
+      const { userEmail, userName } = decoded;
+      const accessToken = jwt.sign({ userEmail, userName }, secret, {
+        expiresIn: 10,
       });
 
-      const refreshToken = jwt.sign({ userEmail }, refreshSecret, {
+      const refreshToken = jwt.sign({ userEmail, userName }, refreshSecret, {
         expiresIn: 15 * 60,
       });
 
@@ -110,7 +109,7 @@ const refreshToken = (req: Request, res: Response) => {
         maxAge: 24 * 60 * 60 * 1000,
       });
 
-      return res.json({ accessToken });
+      return res.json({ accessToken, user: userName });
     }
   });
 };
