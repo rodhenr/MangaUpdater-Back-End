@@ -58,7 +58,7 @@ const login = async (req: Request, res: Response) => {
     const userName = user.username;
 
     const accessToken = jwt.sign({ userEmail, userName }, secret, {
-      expiresIn: 10,
+      expiresIn: 10 * 60,
     });
     const refreshToken = jwt.sign({ userEmail, userName }, refreshSecret, {
       expiresIn: 15 * 60,
@@ -95,7 +95,7 @@ const refreshToken = (req: Request, res: Response) => {
     } else {
       const { userEmail, userName } = decoded;
       const accessToken = jwt.sign({ userEmail, userName }, secret, {
-        expiresIn: 10,
+        expiresIn: 10 * 60,
       });
 
       const refreshToken = jwt.sign({ userEmail, userName }, refreshSecret, {
