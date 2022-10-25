@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 dotenv.config();
 
+//Verifica várias entradas de dados
+
 const verifyNewFollow = async (
   req: Request | any,
   res: Response,

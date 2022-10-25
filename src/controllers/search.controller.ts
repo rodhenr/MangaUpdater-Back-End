@@ -2,6 +2,7 @@ import { mangaModel } from "../models/MangaModel";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
 
+// Pesquisa por mangás
 const getSearch = async (req: Request, res: Response) => {
   const { word } = req.query;
 

@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 dotenv.config();
 
+// Verifica os dados de registro
 const verifyRegister = async (
   req: Request,
   res: Response,
@@ -41,6 +42,7 @@ const verifyRegister = async (
   }
 };
 
+// Verifica os dados de login
 const verifyLogin = (req: Request, res: Response, next: NextFunction) => {
   if (!req.body.email || !req.body.password)
     return res.status(400).send("Dados incompletos!");

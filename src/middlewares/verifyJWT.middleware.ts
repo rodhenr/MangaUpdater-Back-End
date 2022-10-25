@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { NextFunction, Request, Response } from "express";
 import "dotenv/config";
 
+// Verifica a autenticidade do JWT
 const verifyToken = (req: Request | any, res: Response, next: NextFunction) => {
   if (!process.env.REFRESH_SECRET || !process.env.SECRET)
     return res.status(500).send("Erro no servidor.");

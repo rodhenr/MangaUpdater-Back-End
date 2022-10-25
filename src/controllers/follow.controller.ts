@@ -5,6 +5,7 @@ import { conn } from "../config/connection";
 import { isValidObjectId } from "mongoose";
 import { sourceModel } from "../models/SourceModel";
 
+// O usuário começa a seguir um novo mangá
 const newFollow = async (req: Request | any, res: Response) => {
   const { mangaID, sourceID } = req.body;
   const { userEmail } = req;
@@ -14,7 +15,6 @@ const newFollow = async (req: Request | any, res: Response) => {
   try {
     session.startTransaction();
 
-    //Verificações na DB
     const sourceObj = isValidObjectId(sourceID);
     const mangaObj = isValidObjectId(mangaID);
     if (!sourceObj || !mangaObj) return res.status(400).send("IDs inválidas.");
@@ -27,7 +27,6 @@ const newFollow = async (req: Request | any, res: Response) => {
     const source = await sourceModel.findById(sourceID);
     if (!source) return res.status(404).send("Source não encontrada.");
 
-    //Verifica se o usuário já está seguindo o mangá em questão
     const isFollow = user.following.some((i) => String(i.mangaID) === mangaID);
     if (isFollow)
       return res.status(400).send("Você já está seguindo este mangá!");
@@ -36,7 +35,6 @@ const newFollow = async (req: Request | any, res: Response) => {
       (i) => String(i.sourceID) === sourceID
     )[0].pathID;
 
-    //Atualiza a DB
     await userModel.findByIdAndUpdate(user._id, {
       following: [
         {
@@ -56,6 +54,7 @@ const newFollow = async (req: Request | any, res: Response) => {
   }
 };
 
+// O usuário começa a seguir/deixa de seguir uma source de um determinado mangá
 const updateFollow = async (req: Request | any, res: Response) => {
   const { action, pathID, mangaID, sourceID } = req.body;
   const { userEmail } = req;
@@ -64,7 +63,6 @@ const updateFollow = async (req: Request | any, res: Response) => {
   try {
     session.startTransaction();
 
-    //Verificações na DB
     const sourceObj = isValidObjectId(sourceID);
     const mangaObj = isValidObjectId(mangaID);
     if (!sourceObj || !mangaObj) return res.status(400).send("IDs inválidas.");
@@ -77,14 +75,11 @@ const updateFollow = async (req: Request | any, res: Response) => {
     const source = await sourceModel.findById(sourceID);
     if (!source) return res.status(404).send("Source não encontrada.");
 
-    //Verifica se o usuário já está seguindo o mangá em questão
     const isFollow = user.following.some((i) => String(i.mangaID) === mangaID);
     if (!isFollow)
       return res.status(400).send("Você não está seguindo este mangá.");
 
     let followData: IFollowing[];
-
-    //Executa a ação necessário
     if (action === "add") {
       followData = user.following.map((i) => {
         const isNew = i.sources.every((j) => String(j.sourceID) !== sourceID);
@@ -115,7 +110,6 @@ const updateFollow = async (req: Request | any, res: Response) => {
 
     const filteredFollowData = followData.filter((i) => i.sources.length > 0);
 
-    //Atualiza a DB
     await userModel.findByIdAndUpdate(user._id, {
       following: [...filteredFollowData],
     });
@@ -129,6 +123,7 @@ const updateFollow = async (req: Request | any, res: Response) => {
   }
 };
 
+// O usuário deixa de seguir todas as sources de um determinado mangá
 const deleteFollow = async (req: Request | any, res: Response) => {
   const { mangaID } = req.body;
   const { userEmail } = req;
@@ -137,7 +132,6 @@ const deleteFollow = async (req: Request | any, res: Response) => {
   try {
     session.startTransaction();
 
-    //Verificações na DB
     const mangaObj = isValidObjectId(mangaID);
     if (!mangaObj) return res.status(400).send("IDs inválidas.");
     const manga = await mangaModel.findById(mangaID);
@@ -147,12 +141,10 @@ const deleteFollow = async (req: Request | any, res: Response) => {
     });
     if (!user) return res.status(404).send("Usuário não encontrado.");
 
-    //Verifica se o usuário já está seguindo o mangá em questão
     const isFollow = user.following.some((i) => String(i.mangaID) === mangaID);
     if (!isFollow)
       return res.status(400).send("Você não está seguindo este mangá.");
 
-    //Atualiza a DB
     const followData: IFollowing[] = user.following.filter(
       (i) => String(i.mangaID) !== mangaID
     );

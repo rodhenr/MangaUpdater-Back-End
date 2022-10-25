@@ -8,6 +8,7 @@ import "dotenv/config";
 const secret = process.env.SECRET ?? "secret"; // remover
 const refreshSecret = process.env.REFRESH_SECRET ?? "secret"; // remover
 
+// Cadastra um novo usuário
 const register = async (req: Request, res: Response) => {
   const { email, password, username, language } = req.body;
   const session = await conn.startSession();
@@ -33,6 +34,7 @@ const register = async (req: Request, res: Response) => {
   }
 };
 
+// Faz login na aplicação
 const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -79,6 +81,7 @@ const login = async (req: Request, res: Response) => {
   }
 };
 
+// Atualiza o token do usuário
 const refreshToken = (req: Request, res: Response) => {
   if (!process.env.REFRESH_SECRET || !process.env.SECRET)
     return res.status(500).send("Erro no servidor.");
@@ -89,7 +92,7 @@ const refreshToken = (req: Request, res: Response) => {
 
   const refreshToken = cookies.jwt;
   res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
-  jwt.verify(refreshToken, refreshSecret, (err: any, decoded: any) => {
+  jwt.verify(refreshToken, secret, (err: any, decoded: any) => {
     if (err) {
       return res.status(406).json("Refresh Token expired");
     } else {

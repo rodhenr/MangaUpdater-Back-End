@@ -7,7 +7,7 @@ import {
   updateMangaHelper,
   updateManyHelper,
 } from "../utils/mangaInfo";
-import { isValidObjectId, ObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
 import { userModel } from "../models/UserModel";
 
 interface IManga {
@@ -18,7 +18,7 @@ interface IManga {
   sources: ISource[];
 }
 
-// Cadastro de novo mangá, é necessário informar o pathID do MangaUpdates e opcionalmente o pathID do MangaLivre
+// Cadastra um novo mangá no banco de dados
 const newManga = async (req: Request, res: Response) => {
   const { muPathID, mlPathID } = req.body; //COLOCAR MLPATHID COMO OPCIONAL
 
@@ -27,7 +27,6 @@ const newManga = async (req: Request, res: Response) => {
   try {
     session.startTransaction();
 
-    //Verifica se já existe na DB
     const isNew = await mangaModel.findOne({
       sources: {
         $elemMatch: { pathID: muPathID },
@@ -35,7 +34,6 @@ const newManga = async (req: Request, res: Response) => {
     });
     if (isNew) return res.status(400).send("ID já cadastrada!");
 
-    // Cadastra o novo item na DB
     if (mlPathID) {
       const newMangaData = await newMangaHelper(muPathID, mlPathID);
       await mangaModel.create(newMangaData);
@@ -56,7 +54,7 @@ const newManga = async (req: Request, res: Response) => {
   }
 };
 
-//Atualiza um mangá em específico
+// Atualiza um único mangá
 const updateManga = async (req: Request, res: Response) => {
   const { mangaID } = req.body;
 
@@ -65,18 +63,13 @@ const updateManga = async (req: Request, res: Response) => {
   try {
     session.startTransaction();
 
-    //Verifica se o ID é válido
     const obj = isValidObjectId(mangaID);
     if (!obj) return res.status(400).send("ID inválida.");
 
-    //Verifica se já existe na DB
     const manga = await mangaModel.findById(mangaID);
     if (!manga) return res.status(400).send("Mangá não encontrado.");
 
-    //Busca os dados
     const updatedData: IManga = await updateMangaHelper(manga);
-
-    //Atualiza o mangá na DB
     await mangaModel.findByIdAndUpdate({ _id: mangaID }, updatedData);
 
     session.endSession();
@@ -91,7 +84,7 @@ const updateManga = async (req: Request, res: Response) => {
   }
 };
 
-//Recebe a lista de mangás que um usuário em específico está seguindo
+// Atualiza e lista os mangás que um determinado usuário segue
 const getMangas = async (req: Request | any, res: Response) => {
   const { userEmail } = req;
 
@@ -100,21 +93,16 @@ const getMangas = async (req: Request | any, res: Response) => {
   try {
     session.startTransaction();
 
-    //Procura e valida o usuário
     const user = await userModel.findOne({ email: userEmail });
     if (!user) return res.status(404).send("Usuário não encontrado");
 
-    //Gera um objeto para cada item e source que o usuário segue
     const mangaIDs = user.following
       .map((i) => {
         return i.mangaID;
       })
       .flat();
 
-    //Atualiza todos itens
     const updatedData = await updateManyHelper(mangaIDs);
-
-    //Atualiza a BD
     await Promise.all(
       updatedData.map(
         async (i) =>
@@ -131,7 +119,6 @@ const getMangas = async (req: Request | any, res: Response) => {
       )
     );
 
-    //Faz uma nova query para pegar os dados atualizados
     const uData = await Promise.all(
       updatedData.map(async (i) => {
         const mData = await mangaModel.findById(i!.mangaID);
@@ -154,8 +141,6 @@ const getMangas = async (req: Request | any, res: Response) => {
         };
       })
     );
-
-    //Ordena os dados por data
     const dataByDate = uData.sort(function (a, b) {
       return b.sources[0]!.date.getTime() - a.sources[0]!.date.getTime();
     });
@@ -169,6 +154,7 @@ const getMangas = async (req: Request | any, res: Response) => {
   }
 };
 
+// Lista as informações de um mangá para o usuário
 const getMangaModal = async (req: Request | any, res: Response) => {
   const { mangaID } = req.query;
   const { userEmail } = req;
