@@ -34,13 +34,8 @@ const newManga = async (req: Request, res: Response) => {
     });
     if (isNew) return res.status(400).send("ID já cadastrada!");
 
-    if (mlPathID) {
-      const newMangaData = await newMangaHelper(muPathID, mlPathID);
-      await mangaModel.create(newMangaData);
-    } else {
-      const newMangaData = await newMangaHelper(muPathID);
-      await mangaModel.create(newMangaData);
-    }
+    const newMangaData = await newMangaHelper(muPathID, mlPathID);
+    await mangaModel.create(newMangaData);
 
     session.endSession();
     res.status(200).send("Registro criado com sucesso!");
@@ -69,7 +64,7 @@ const updateManga = async (req: Request, res: Response) => {
     const manga = await mangaModel.findById(mangaID);
     if (!manga) return res.status(400).send("Mangá não encontrado.");
 
-    const updatedData: IManga = await updateMangaHelper(manga);
+    const updatedData = await updateMangaHelper(manga);
     await mangaModel.findByIdAndUpdate({ _id: mangaID }, updatedData);
 
     session.endSession();
