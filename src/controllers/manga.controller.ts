@@ -2,11 +2,7 @@ import { mangaModel, ISource } from "../models/MangaModel";
 import { conn } from "../config/connection";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
-import {
-  newMangaHelper,
-  updateMangaHelper,
-  updateManyHelper,
-} from "../utils/mangaInfo";
+import { newMangaHelper, updateMangaHelper } from "../utils/mangaInfo";
 import { isValidObjectId } from "mongoose";
 import { userModel } from "../models/UserModel";
 
@@ -64,7 +60,7 @@ const updateManga = async (req: Request, res: Response) => {
     const manga = await mangaModel.findById(mangaID);
     if (!manga) return res.status(400).send("Mangá não encontrado.");
 
-    const updatedData = await updateMangaHelper(manga);
+    const updatedData = await updateMangaHelper(manga._id);
     await mangaModel.findByIdAndUpdate({ _id: mangaID }, updatedData);
 
     session.endSession();
@@ -97,13 +93,20 @@ const getMangas = async (req: Request | any, res: Response) => {
       })
       .flat();
 
-    const updatedData = await updateManyHelper(mangaIDs);
+    const updatedData = await Promise.all(
+      mangaIDs.map(async (i) => {
+        return updateMangaHelper(i);
+      })
+    ).then((res) => {
+      return res.filter((i) => i !== undefined);
+    });
+
     await Promise.all(
       updatedData.map(
         async (i) =>
           await mangaModel.updateOne(
             {
-              _id: i!.mangaID,
+              _id: i!.id,
             },
             {
               $set: {
@@ -116,7 +119,7 @@ const getMangas = async (req: Request | any, res: Response) => {
 
     const uData = await Promise.all(
       updatedData.map(async (i) => {
-        const mData = await mangaModel.findById(i!.mangaID);
+        const mData = await mangaModel.findById(i!.id);
 
         const userSources = user.following.filter((i) => {
           return String(i.mangaID) === String(mData!._id);

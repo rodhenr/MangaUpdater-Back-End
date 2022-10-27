@@ -4,22 +4,12 @@ import * as cheerio from "cheerio";
 import { ObjectId } from "mongoose";
 import { mangaModel, IManga, ISource } from "../models/MangaModel";
 
-interface IUpdate {
-  mangaID: ObjectId;
-  sources: ISource;
-}
-
 interface Scanlator {
-  id_scanlator: number;
   name: string;
-  link: string;
 }
 
 interface ScanInterface {
-  id_release: number;
   scanlators: Scanlator[];
-  views: number;
-  link: string;
 }
 
 interface ReleasesInterface {
@@ -28,19 +18,11 @@ interface ReleasesInterface {
 
 interface MLInterface {
   id_serie: number;
-  id_chapter: number;
   name: string;
-  chapter_name: string;
   number: string;
   date: string;
   date_created: string;
   releases: ReleasesInterface;
-  seasonAnimeFinished: null | string;
-  officialLink: null | string;
-  predictionDate: null | string;
-  predictionDateToCalc: null | string;
-  serieFirstChapter: null | string;
-  officialSerieLink: string;
 }
 
 interface MLResponse {
@@ -157,17 +139,18 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
 };
 
 // Atualiza os dados de um mangá especifico
-export const updateMangaHelper = async (manga: IManga) => {
-  const mangaSources = manga.sources;
+export const updateMangaHelper = async (id: ObjectId) => {
+  const manga = await mangaModel.findById(id);
+
   const muSource = await sourceModel.findOne({ abb: "MU" });
   const mlSource = await sourceModel.findOne({ abb: "ML" });
 
   if (!muSource || !mlSource) throw Error();
 
-  const mu = mangaSources.filter(
+  const mu = manga!.sources.filter(
     (i) => String(i.sourceID) === String(muSource._id)
   );
-  const ml = mangaSources.filter(
+  const ml = manga!.sources.filter(
     (i) => String(i.sourceID) === String(mlSource._id)
   );
 
@@ -178,7 +161,7 @@ export const updateMangaHelper = async (manga: IManga) => {
   const { data: muData } = await axios.get(muURL);
   const $mu = cheerio.load(muData);
 
-  let image: string, name: string, author: string, genres: string[];
+  let name: string, author: string, genres: string[];
 
   genres = $mu(".col-6.p-2.text:eq(1) .sContent:eq(1) u")
     .map(function (index, item) {
@@ -188,7 +171,6 @@ export const updateMangaHelper = async (manga: IManga) => {
     .slice(0, -1);
 
   name = $mu(".releasestitle").text();
-  image = $mu(".sContent center img").prop("src");
 
   if ($mu("a[href*='add_author']").length > 0) {
     const text = $mu("a[href*='add_author']:first").parents().first().text();
@@ -230,24 +212,32 @@ export const updateMangaHelper = async (manga: IManga) => {
 
   //MangaLivre
   const mlURL = mlSource.baseURL + mlPath;
-  const data: MLResponse = await axios.get(mlURL).then((response) => {
-    return response.data;
-  });
+  const data: MLResponse = await axios
+    .get(mlURL)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((r) => {
+      return {
+        chapters: [
+          {
+            id_serie: 0,
+            name: manga!.name,
+            number: ml[0].chapter,
+            date: "",
+            date_created: ml[0].date,
+            releases: {
+              _scan: {
+                scanlators: [{ name: ml[0].scanlator }],
+              },
+            },
+          },
+        ],
+      };
+    });
 
   const lChapter = data.chapters[0];
-
-  const newUrl = `https://mangalivre.net/manga/${lChapter.name
-    .toLowerCase()
-    .split(" ")
-    .join("-")}/${lChapter.id_serie}`;
-
-  const { data: mlData } = await axios.get(newUrl);
-  const $ml = cheerio.load(mlData);
-
-  image = $ml(".cover").eq(1).prop("src");
-
   const date = lChapter.date_created;
-
   const mlChapter = lChapter.number;
   const releases = lChapter.releases;
 
@@ -266,7 +256,8 @@ export const updateMangaHelper = async (manga: IManga) => {
   }
 
   return {
-    image,
+    id: manga!._id,
+    image: manga!.image,
     name,
     author,
     genres,
@@ -274,6 +265,7 @@ export const updateMangaHelper = async (manga: IManga) => {
   };
 };
 
+/*
 // Atualiza os dados de mais de um mangá
 export const updateManyHelper = async (ids: ObjectId[]) => {
   const muSource = await sourceModel.findOne({ abb: "MU" });
@@ -303,10 +295,7 @@ export const updateManyHelper = async (ids: ObjectId[]) => {
         muChapter,
         muDate,
         muScan,
-        image,
         finalSources: ISource[];
-
-      image = $mu(".sContent center img").prop("src");
 
       if ($mu("div.sContent:contains('v.')").length > 0) {
         muChapter = $mu("div.sContent:contains('c.') i").eq(1).text();
@@ -333,24 +322,28 @@ export const updateManyHelper = async (ids: ObjectId[]) => {
 
       //MangaLivre
       const mlURL = mlSource.baseURL + mlPath;
-      const data: MLResponse = await axios.get(mlURL).then((response) => {
-        return response.data;
-      });
+      const data: MLResponse = await axios
+        .get(mlURL)
+        .then((response) => {
+          return response.data;
+        })
+        .catch((r) => {
+          return {
+            id_serie: 0,
+            name: manga!.name,
+            number: ml[0].chapter,
+            date: "",
+            date_created: ml[0].date,
+            releases: {
+              _scan: {
+                scanlators: [{ name: ml[0].scanlator }],
+              },
+            },
+          };
+        });
 
       const lChapter = data.chapters[0];
-
-      const newUrl = `https://mangalivre.net/manga/${lChapter.name
-        .toLowerCase()
-        .split(" ")
-        .join("-")}/${lChapter.id_serie}`;
-
-      const { data: mlData } = await axios.get(newUrl);
-      const $ml = cheerio.load(mlData);
-
-      image = $ml(".cover").eq(1).prop("src");
-
       const date = lChapter.date_created;
-
       const mlChapter = lChapter.number;
       const releases = lChapter.releases;
 
@@ -374,3 +367,4 @@ export const updateManyHelper = async (ids: ObjectId[]) => {
     return res.filter((i) => i !== undefined);
   });
 };
+ */
