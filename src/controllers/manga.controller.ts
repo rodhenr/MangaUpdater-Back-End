@@ -6,17 +6,9 @@ import { newMangaHelper, updateMangaHelper } from "../utils/mangaInfo";
 import { isValidObjectId } from "mongoose";
 import { userModel } from "../models/UserModel";
 
-interface IManga {
-  image: string;
-  name: string;
-  author: string;
-  genres: string[];
-  sources: ISource[];
-}
-
 // Cadastra um novo mangá no banco de dados
 const newManga = async (req: Request, res: Response) => {
-  const { muPathID, mlPathID } = req.body; //COLOCAR MLPATHID COMO OPCIONAL
+  const { muPathID, mlPathID } = req.body;
 
   const session = await conn.startSession();
 

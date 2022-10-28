@@ -4,13 +4,15 @@ interface ISource {
   _id: Schema.Types.ObjectId;
   name: string;
   abb: string;
-  baseURL: string;
+  createURL: string;
+  updateURL: string;
   language: string;
 }
 const sourceSchema = new Schema<ISource>({
   name: { type: String, required: true },
   abb: { type: String, required: true },
-  baseURL: { type: String, required: true },
+  createURL: { type: String, required: true },
+  updateURL: { type: String, required: true },
   language: { type: String, required: true },
 });
 

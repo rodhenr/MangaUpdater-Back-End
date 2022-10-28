@@ -27,7 +27,7 @@ const verifyUpdateFollow = async (
     !req.body.sourceID
   )
     return res.status(400).send("Dados inválidos!");
-    
+
   next();
 };
 
@@ -44,7 +44,8 @@ const verifyNewManga = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.body.muPathID) return res.status(400).send("Dados inválidos!");
+  if (!req.body.muPathID || !req.body.mlPathID)
+    return res.status(400).send("Dados inválidos!");
 
   next();
 };

@@ -39,7 +39,7 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
 
   if (!muSource || !mlSource) throw Error();
 
-  const muURL = muSource.baseURL + muPath;
+  const muURL = muSource.createURL + muPath;
   const { data: muData } = await axios.get(muURL);
   const $mu = cheerio.load(muData);
 
@@ -93,20 +93,18 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   };
 
   //MangaLivre
-  const mlURL = mlSource.baseURL + mlPath;
-  const data: MLResponse = await axios.get(mlURL).then((response) => {
+  const mlURL = mlSource.createURL + mlPath;
+  const { data: mlData } = await axios.get(mlURL);
+  const $ml = cheerio.load(mlData);
+
+  const indexID = mlPath.indexOf("/");
+  const pathID = mlPath.substring(indexID + 1);
+  const updateU = mlSource.updateURL + pathID;
+
+  const data: MLResponse = await axios.get(updateU).then((response) => {
     return response.data;
   });
-
   const lChapter = data.chapters[0];
-
-  const newUrl = `https://mangalivre.net/manga/${lChapter.name
-    .toLowerCase()
-    .split(" ")
-    .join("-")}/${lChapter.id_serie}`;
-
-  const { data: mlData } = await axios.get(newUrl);
-  const $ml = cheerio.load(mlData);
 
   image = $ml(".cover").eq(1).prop("src");
 
@@ -157,7 +155,7 @@ export const updateMangaHelper = async (id: ObjectId) => {
   const muPath = mu.length > 0 ? mu[0].pathID : "";
   const mlPath = ml.length > 0 ? ml[0].pathID : "";
 
-  const muURL = muSource.baseURL + muPath;
+  const muURL = muSource.updateURL + muPath;
   const { data: muData } = await axios.get(muURL);
   const $mu = cheerio.load(muData);
 
@@ -211,9 +209,15 @@ export const updateMangaHelper = async (id: ObjectId) => {
   };
 
   //MangaLivre
-  const mlURL = mlSource.baseURL + mlPath;
+  const mlURL = mlSource.createURL + mlPath;
+  const { data: mlData } = await axios.get(mlURL);
+
+  const indexID = mlPath.indexOf("/");
+  const pathID = mlPath.substring(indexID + 1);
+  const updateU = mlSource.updateURL + pathID;
+
   const data: MLResponse = await axios
-    .get(mlURL)
+    .get(updateU)
     .then((response) => {
       return response.data;
     })
@@ -235,8 +239,8 @@ export const updateMangaHelper = async (id: ObjectId) => {
         ],
       };
     });
-
   const lChapter = data.chapters[0];
+
   const date = lChapter.date_created;
   const mlChapter = lChapter.number;
   const releases = lChapter.releases;
