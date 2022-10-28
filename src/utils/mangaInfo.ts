@@ -104,6 +104,7 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   const data: MLResponse = await axios.get(updateU).then((response) => {
     return response.data;
   });
+  
   const lChapter = data.chapters[0];
 
   image = $ml(".cover").eq(1).prop("src");

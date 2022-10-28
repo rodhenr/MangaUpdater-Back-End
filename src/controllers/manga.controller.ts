@@ -5,6 +5,7 @@ import { AxiosError } from "axios";
 import { newMangaHelper, updateMangaHelper } from "../utils/mangaInfo";
 import { isValidObjectId } from "mongoose";
 import { userModel } from "../models/UserModel";
+import { sourceModel } from "../models/SourceModel";
 
 // Cadastra um novo mangá no banco de dados
 const newManga = async (req: Request, res: Response) => {
@@ -160,37 +161,43 @@ const getMangaModal = async (req: Request | any, res: Response) => {
       (i) => String(i.mangaID) === mangaID
     );
 
-    const mangaSources = manga.sources.map((i) => {
-      let filter;
+    const mangaSources = await Promise.all(
+      manga.sources.map(async (i) => {
+        let filter;
 
-      if (userSource.length === 0) {
-        filter = [];
-      } else {
-        filter = userSource[0]?.sources.filter(
-          (j) => String(j.sourceID) === String(i.sourceID)
-        );
-      }
+        if (userSource.length === 0) {
+          filter = [];
+        } else {
+          filter = userSource[0]?.sources.filter(
+            (j) => String(j.sourceID) === String(i.sourceID)
+          );
+        }
 
-      if (filter.length > 0) {
-        return {
-          sourceID: i.sourceID,
-          pathID: i.pathID,
-          chapter: i.chapter,
-          date: i.date,
-          scanlator: i.scanlator,
-          follow: true,
-        };
-      } else {
-        return {
-          sourceID: i.sourceID,
-          pathID: i.pathID,
-          chapter: i.chapter,
-          date: i.date,
-          scanlator: i.scanlator,
-          follow: false,
-        };
-      }
-    });
+        const sourceName = await sourceModel.findById(i.sourceID);
+
+        if (filter.length > 0) {
+          return {
+            sourceID: i.sourceID,
+            pathID: i.pathID,
+            chapter: i.chapter,
+            date: i.date,
+            scanlator: i.scanlator,
+            follow: true,
+            sourceName: sourceName!.name
+          };
+        } else {
+          return {
+            sourceID: i.sourceID,
+            pathID: i.pathID,
+            chapter: i.chapter,
+            date: i.date,
+            scanlator: i.scanlator,
+            follow: false,
+            sourceName: sourceName!.name
+          };
+        }
+      })
+    );
 
     const data = {
       id: manga._id,
