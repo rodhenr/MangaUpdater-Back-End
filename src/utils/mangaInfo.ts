@@ -99,12 +99,19 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
 
   const indexID = mlPath.indexOf("/");
   const pathID = mlPath.substring(indexID + 1);
-  const updateU = mlSource.updateURL + pathID;
 
-  const data: MLResponse = await axios.get(updateU).then((response) => {
-    return response.data;
-  });
-  
+  const data: MLResponse = await axios
+    .get(mlSource.updateURL, {
+      params: { page: 1, id_serie: pathID },
+      headers: {
+        "x-requested-with": "XMLHttpRequest",
+        "content-type": "application/x-www-form-urlencoded",
+      },
+    })
+    .then((response) => {
+      return response.data;
+    });
+
   const lChapter = data.chapters[0];
 
   image = $ml(".cover").eq(1).prop("src");
@@ -215,10 +222,15 @@ export const updateMangaHelper = async (id: ObjectId) => {
 
   const indexID = mlPath.indexOf("/");
   const pathID = mlPath.substring(indexID + 1);
-  const updateU = mlSource.updateURL + pathID;
 
   const data: MLResponse = await axios
-    .get(updateU)
+    .get(mlSource.updateURL, {
+      params: { page: 1, id_serie: pathID },
+      headers: {
+        "x-requested-with": "XMLHttpRequest",
+        "content-type": "application/x-www-form-urlencoded",
+      },
+    })
     .then((response) => {
       return response.data;
     })
