@@ -94,44 +94,33 @@ const getMangas = async (req: Request | any, res: Response) => {
       return res.filter((i) => i !== undefined);
     });
 
-    await Promise.all(
-      updatedData.map(
-        async (i) =>
-          await mangaModel.updateOne(
-            {
-              _id: i!.id,
-            },
-            {
-              $set: {
-                sources: i!.sources,
-              },
-            }
-          )
-      )
-    );
-
     const uData = await Promise.all(
       updatedData.map(async (i) => {
-        const mData = await mangaModel.findById(i!.id);
+        const mangaData = await mangaModel.findById(i!.id);
 
         const userSources = user.following.filter((i) => {
-          return String(i.mangaID) === String(mData!._id);
+          return String(i.mangaID) === String(mangaData!._id);
         })[0].sources;
 
-        const mSources = userSources.map((i) => {
-          return mData?.sources.filter(
+        const sourceResult = userSources.map((i) => {
+          return mangaData?.sources.filter(
             (j) => String(j.sourceID) === String(i.sourceID)
           )[0];
         });
 
+        const sortedSources = sourceResult.sort(function (a, b) {
+          return b!.date.getTime() - a!.date.getTime();
+        });
+
         return {
-          mangaID: mData!._id,
-          image: mData!.image,
-          name: mData!.name,
-          sources: mSources,
+          mangaID: mangaData!._id,
+          image: mangaData!.image,
+          name: mangaData!.name,
+          sources: sortedSources,
         };
       })
     );
+
     const dataByDate = uData.sort(function (a, b) {
       return b.sources[0]!.date.getTime() - a.sources[0]!.date.getTime();
     });
@@ -183,7 +172,7 @@ const getMangaModal = async (req: Request | any, res: Response) => {
             date: i.date,
             scanlator: i.scanlator,
             follow: true,
-            sourceName: sourceName!.name
+            sourceName: sourceName!.name,
           };
         } else {
           return {
@@ -193,7 +182,7 @@ const getMangaModal = async (req: Request | any, res: Response) => {
             date: i.date,
             scanlator: i.scanlator,
             follow: false,
-            sourceName: sourceName!.name
+            sourceName: sourceName!.name,
           };
         }
       })

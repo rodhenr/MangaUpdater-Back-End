@@ -272,6 +272,17 @@ export const updateMangaHelper = async (id: ObjectId) => {
     finalSources = [muSourceData, mlSourceData];
   }
 
+  await mangaModel.updateOne(
+    {
+      _id: id,
+    },
+    {
+      $set: {
+        sources: finalSources,
+      },
+    }
+  );
+
   return {
     id: manga!._id,
     image: manga!.image,
@@ -281,107 +292,3 @@ export const updateMangaHelper = async (id: ObjectId) => {
     sources: finalSources,
   };
 };
-
-/*
-// Atualiza os dados de mais de um mangá
-export const updateManyHelper = async (ids: ObjectId[]) => {
-  const muSource = await sourceModel.findOne({ abb: "MU" });
-  const mlSource = await sourceModel.findOne({ abb: "ML" });
-  if (!muSource || !mlSource) throw Error();
-
-  return await Promise.all(
-    ids.map(async (i) => {
-      const manga = await mangaModel.findById(i);
-
-      const mu = manga!.sources.filter(
-        (i) => String(i.sourceID) === String(muSource._id)
-      );
-      const ml = manga!.sources.filter(
-        (i) => String(i.sourceID) === String(mlSource._id)
-      );
-      const muPath = mu.length > 0 ? mu[0].pathID : "";
-      const mlPath = ml.length > 0 ? ml[0].pathID : "";
-
-      const muURL = muSource.baseURL + muPath;
-      const { data: muData } = await axios.get(muURL);
-      const $mu = cheerio.load(muData);
-
-      //MangaUpdates
-      let muSourceData: ISource,
-        mlSourceData: ISource,
-        muChapter,
-        muDate,
-        muScan,
-        finalSources: ISource[];
-
-      if ($mu("div.sContent:contains('v.')").length > 0) {
-        muChapter = $mu("div.sContent:contains('c.') i").eq(1).text();
-      } else {
-        muChapter = $mu("div.sContent:contains('c.') i").first().text();
-      }
-      muScan = $mu('a[title="Group Info"]').first().text();
-      muDate = $mu(".sContent span").first().prop("title");
-      const daysStr = " days";
-      const regex = new RegExp("\\b" + daysStr + "\\b");
-      const dateIndex = muDate.search(regex);
-      const daysAgo = muDate.slice(0, dateIndex);
-      const today = new Date();
-      const realDate = new Date(today.getTime());
-      realDate.setDate(today.getDate() - daysAgo);
-
-      muSourceData = {
-        sourceID: muSource._id,
-        pathID: muPath,
-        chapter: muChapter,
-        date: new Date(realDate),
-        scanlator: muScan,
-      };
-
-      //MangaLivre
-      const mlURL = mlSource.baseURL + mlPath;
-      const data: MLResponse = await axios
-        .get(mlURL)
-        .then((response) => {
-          return response.data;
-        })
-        .catch((r) => {
-          return {
-            id_serie: 0,
-            name: manga!.name,
-            number: ml[0].chapter,
-            date: "",
-            date_created: ml[0].date,
-            releases: {
-              _scan: {
-                scanlators: [{ name: ml[0].scanlator }],
-              },
-            },
-          };
-        });
-
-      const lChapter = data.chapters[0];
-      const date = lChapter.date_created;
-      const mlChapter = lChapter.number;
-      const releases = lChapter.releases;
-
-      mlSourceData = {
-        sourceID: mlSource._id,
-        pathID: mlPath,
-        chapter: mlChapter,
-        date: new Date(date),
-        scanlator: Object.values(releases)[0].scanlators[0].name,
-      };
-
-      if (mlSourceData.date >= muSourceData.date) {
-        finalSources = [mlSourceData, muSourceData];
-      } else {
-        finalSources = [muSourceData, mlSourceData];
-      }
-
-      return { mangaID: i, sources: finalSources };
-    })
-  ).then((res) => {
-    return res.filter((i) => i !== undefined);
-  });
-};
- */
