@@ -43,14 +43,11 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   const { data: muData } = await axios.get(muURL);
   const $mu = cheerio.load(muData);
 
-  let image, name, author, genres;
+  let image,
+    name,
+    author,
+    genres: string[] = [];
 
-  genres = $mu(".col-6.p-2.text:eq(1) .sContent:eq(1) u")
-    .map(function (index, item) {
-      return $mu(item).text();
-    })
-    .get()
-    .slice(0, -1);
   name = $mu(".releasestitle").text();
   image = $mu(".sContent center img").prop("src");
 
@@ -96,6 +93,13 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   const mlURL = mlSource.createURL + mlPath;
   const { data: mlData } = await axios.get(mlURL);
   const $ml = cheerio.load(mlData);
+
+  $ml("ul.touchcarousel-container")
+    .eq(1)
+    .children()
+    .each(function (idx, li) {
+      genres.push($ml(li).find("span").text());
+    });
 
   const indexID = mlPath.indexOf("/");
   const pathID = mlPath.substring(indexID + 1);
