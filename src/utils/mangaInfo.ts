@@ -46,7 +46,8 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   let image,
     name,
     author,
-    genres: string[] = [];
+    genres: string[] = [],
+    alternativeNames: string[] = [];
 
   name = $mu(".releasestitle").text();
   image = $mu(".sContent center img").prop("src");
@@ -98,7 +99,14 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
     .eq(1)
     .children()
     .each(function (idx, li) {
-      genres.push($ml(li).find("span").text());
+      if ($ml(li).find("span").text().match("^[A-Z].*$"))
+        genres.push($ml(li).find("span").text());
+    });
+
+  $ml(".series-synom")
+    .children()
+    .each(function (idx, li) {
+      alternativeNames.push($ml(li).text());
     });
 
   const indexID = mlPath.indexOf("/");
@@ -142,6 +150,7 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   return {
     image,
     name,
+    alternativeNames,
     author,
     genres,
     sources: finalSources,

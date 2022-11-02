@@ -12,6 +12,7 @@ export interface IManga {
   _id: Schema.Types.ObjectId;
   image: string;
   name: string;
+  alternativeNames: string[];
   author: string;
   genres: string[];
   sources: ISource[];
@@ -30,6 +31,7 @@ export const sourcesSchema = new Schema<ISource>(
 const mangaSchema = new Schema<IManga>({
   image: { type: String, required: true },
   name: { type: String, required: true },
+  alternativeNames: { type: [String], required: true },
   author: { type: String, required: true },
   genres: { type: [String], required: true },
   sources: { type: [sourcesSchema], required: true, default: [] },

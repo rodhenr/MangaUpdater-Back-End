@@ -191,6 +191,7 @@ const getMangaModal = async (req: Request | any, res: Response) => {
     const data = {
       id: manga._id,
       name: manga.name,
+      alternativeNames: manga.alternativeNames,
       author: manga.author,
       genres: manga.genres,
       image: manga.image,
