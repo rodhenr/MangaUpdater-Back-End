@@ -20,6 +20,7 @@ interface IUser {
   username: string;
   password: string;
   email: string;
+  admin: boolean;
   config: IUserConfig;
   following: IFollowing[];
 }
@@ -53,6 +54,7 @@ const userSchema = new Schema<IUser>({
   password: { type: String, required: true },
   email: { type: String, required: true },
   config: { type: userConfigSchema, required: true },
+  admin: { type: Boolean, required: true, default: false },
   following: { type: [followingSchema], required: true, default: [] },
 });
 

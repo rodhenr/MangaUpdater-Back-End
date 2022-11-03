@@ -10,11 +10,17 @@ import { sourceModel } from "../models/SourceModel";
 // Cadastra um novo mangá no banco de dados
 const newManga = async (req: Request, res: Response) => {
   const { muPathID, mlPathID } = req.body;
+  const userEmail = req;
 
   const session = await conn.startSession();
 
   try {
     session.startTransaction();
+
+    const user = await userModel.findOne({ email: userEmail });
+
+    if (user === null || !user.admin)
+      res.status(400).send("Você não tem permissão de cadastro.");
 
     const isNew = await mangaModel.findOne({
       sources: {
