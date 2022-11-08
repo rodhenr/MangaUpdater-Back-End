@@ -16,7 +16,6 @@ const newManga = async (req: Request, res: Response) => {
 
   try {
     session.startTransaction();
-
     const user = await userModel.findOne({ email: userEmail });
 
     if (user === null || !user.admin)
