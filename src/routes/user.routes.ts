@@ -1,9 +1,12 @@
 import Express from "express";
 import { uploadAvatar } from "../controllers/user.controller";
-import { upload, storage } from "../middlewares/avatar.middleware";
+import { upload } from "../middlewares/avatar.middleware";
+import verifyToken from "../middlewares/verifyJWT.middleware";
 
 const userRoutes = Express.Router();
 
-userRoutes.route("/api/user/avatar").post(upload, uploadAvatar);
+userRoutes
+  .route("/api/user/avatar")
+  .post(verifyToken, upload.single("file"), uploadAvatar);
 
 export default userRoutes;

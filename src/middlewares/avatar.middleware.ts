@@ -1,26 +1,17 @@
 import Multer, { diskStorage } from "multer";
-import { GridFsStorage } from "multer-gridfs-storage/lib/gridfs";
-import util from "util";
 import dotenv from "dotenv";
+import path from "path";
 dotenv.config();
 
-const storage = new GridFsStorage({
-  url: `${process.env.DATABASE_URL}`,
-  options: { useNewUrlParser: true, useUnifiedTopology: true },
-
-  file: (req, file) => {
-    const match = ["image/png", "image/jpeg"];
-
-    if (match.indexOf(file.mimetype) === -1)
-      return `${Date.now()} ${file.originalname}`;
-
-    return {
-      bucketName: "images",
-      filename: `${Date.now()} ${file.originalname}`,
-    };
+var storage = diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../public/images"));
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
   },
 });
 
-const upload = Multer({ storage: storage }).single("file");
+const upload = Multer({ storage: storage });
 
-export { storage, upload };
+export { upload };

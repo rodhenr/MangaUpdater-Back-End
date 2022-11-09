@@ -1,4 +1,4 @@
-import { mangaModel, ISource } from "../models/MangaModel";
+import { mangaModel } from "../models/MangaModel";
 import { conn } from "../config/connection";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
