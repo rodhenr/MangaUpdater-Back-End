@@ -21,7 +21,7 @@ const register = async (req: Request, res: Response) => {
       username: username,
       password: hashedPassword,
       email: email,
-      config: { language },
+      config: { avatar: "", language },
     });
 
     session.endSession();

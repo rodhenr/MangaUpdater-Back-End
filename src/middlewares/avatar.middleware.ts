@@ -12,6 +12,23 @@ var storage = diskStorage({
   },
 });
 
-const upload = Multer({ storage: storage });
+const upload = Multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (
+      file.mimetype === "image/png" ||
+      file.mimetype === "image/jpg" ||
+      file.mimetype === "image/jpeg"
+    ) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      return cb(
+        new Error("Apenas arquivos .png, .jpg e .jpeg são permitidos!")
+      );
+    }
+  },
+  limits: { fileSize: 1024 * 1024 },
+});
 
 export { upload };

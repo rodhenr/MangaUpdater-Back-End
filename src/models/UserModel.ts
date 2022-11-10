@@ -43,7 +43,7 @@ const followingSchema = new Schema<IFollowing>(
 
 const userConfigSchema = new Schema<IUserConfig>(
   {
-    avatar: { data: Buffer, contentType: String, default: "" },
+    avatar: { type: String, default: "" },
     language: { type: String, required: true },
   },
   { _id: false }

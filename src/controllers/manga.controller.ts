@@ -8,9 +8,9 @@ import { userModel } from "../models/UserModel";
 import { sourceModel } from "../models/SourceModel";
 
 // Cadastra um novo mangá no banco de dados
-const newManga = async (req: Request, res: Response) => {
+const newManga = async (req: Request | any, res: Response) => {
   const { muPathID, mlPathID } = req.body;
-  const userEmail = req;
+  const { userEmail } = req;
 
   const session = await conn.startSession();
 

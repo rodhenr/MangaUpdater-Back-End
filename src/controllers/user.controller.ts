@@ -1,22 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import { conn } from "../config/connection";
-import { upload } from "../middlewares/avatar.middleware";
 import { userModel } from "../models/UserModel";
 
 // Faz o upload de um novo avatar
 const uploadAvatar = async (
-  req: Request,
+  req: Request | any,
   res: Response,
   next: NextFunction
 ) => {
-  const userEmail = req;
+  const { userEmail } = req;
   const session = await conn.startSession();
 
   try {
     session.startTransaction();
-    if (req.file === undefined) return res.status(401).send("Undefined...");
+    if (req.file === undefined)
+      return res.status(401).send("Erro ao fazer upload");
 
-    userModel.findOneAndUpdate(
+    await userModel.findOneAndUpdate(
       { email: userEmail },
       { config: { avatar: req.file.path } }
     );
