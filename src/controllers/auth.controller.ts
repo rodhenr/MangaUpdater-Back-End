@@ -37,6 +37,9 @@ const register = async (req: Request, res: Response) => {
 // Faz login na aplicação
 const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
+  const { hostname } = req;
+
+  const serverName = `http://${hostname}:${process.env.PORT}/images/`;
 
   const session = await conn.startSession();
 
@@ -58,6 +61,7 @@ const login = async (req: Request, res: Response) => {
 
     const userEmail = user.email;
     const userName = user.username;
+    const userAvatar = `${serverName}${user.config.avatar}`;
 
     const accessToken = jwt.sign({ userEmail, userName }, secret, {
       expiresIn: 100 * 60,
@@ -73,7 +77,7 @@ const login = async (req: Request, res: Response) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.json({ accessToken, user: userName });
+    res.json({ accessToken, user: userName, userAvatar });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();

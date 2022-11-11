@@ -18,7 +18,7 @@ const uploadAvatar = async (
 
     await userModel.findOneAndUpdate(
       { email: userEmail },
-      { config: { avatar: req.file.path } }
+      { config: { avatar: req.file.filename } }
     );
 
     session.endSession();

@@ -22,6 +22,7 @@ app.use(followRoutes);
 app.use(mangaRoutes);
 app.use(searchRoutes);
 app.use(userRoutes);
+app.use(express.static("public"));
 
 app.listen(port, () => {
   console.log(`Server ON! Listening port ${port}...`);
