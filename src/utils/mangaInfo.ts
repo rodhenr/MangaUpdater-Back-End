@@ -8,25 +8,25 @@ interface Scanlator {
   name: string;
 }
 
-interface ScanInterface {
+interface IScan {
   scanlators: Scanlator[];
 }
 
-interface ReleasesInterface {
-  [key: string]: ScanInterface;
+interface IRelease {
+  [key: string]: IScan;
 }
 
-interface MLInterface {
+interface IMangaLivre {
   id_serie: number;
   name: string;
   number: string;
   date: string;
   date_created: string;
-  releases: ReleasesInterface;
+  releases: IRelease;
 }
 
-interface MLResponse {
-  chapters: MLInterface[];
+interface IMLResponse {
+  chapters: IMangaLivre[];
 }
 
 // Busca pelos dados de um novo mangá
@@ -92,8 +92,6 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
     realDate.setDate(today.getDate() - daysAgo);
   }
 
-  console.log(muScan);
-
   muSourceData = {
     sourceID: muSource._id,
     pathID: muPath,
@@ -124,7 +122,7 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   const indexID = mlPath.indexOf("/");
   const pathID = mlPath.substring(indexID + 1);
 
-  const data: MLResponse = await axios
+  const data: IMLResponse = await axios
     .get(mlSource.updateURL, {
       params: { page: 1, id_serie: pathID },
       headers: {
@@ -211,27 +209,41 @@ export const updateMangaHelper = async (id: ObjectId) => {
   }
 
   //MangaUpdates
+  //MangaUpdates
   let muSourceData: ISource,
     mlSourceData: ISource,
-    muChapter,
+    muChapter = "N/A",
     muDate,
-    muScan,
+    muScan = "N/A",
     finalSources: ISource[];
 
-  if ($mu("div.sContent:contains('v.')").length > 0) {
+  if ($mu("div.sCat:contains('Latest Release(s)')").next().text() === "N/A\n") {
+    muChapter = "N/A";
+  } else if ($mu("div.sContent:contains('v.')").length > 0) {
     muChapter = $mu("div.sContent:contains('c.') i").eq(1).text();
   } else {
     muChapter = $mu("div.sContent:contains('c.') i").first().text();
   }
-  muScan = $mu('a[title="Group Info"]').first().text();
+
+  if (
+    $mu('a[title="Group Info"]').first().text() !== undefined &&
+    $mu('a[title="Group Info"]').first().text() !== ""
+  ) {
+    muScan = $mu('a[title="Group Info"]').first().text();
+  }
+
   muDate = $mu(".sContent span").first().prop("title");
-  const daysStr = " days";
-  const regex = new RegExp("\\b" + daysStr + "\\b");
-  const dateIndex = muDate.search(regex);
-  const daysAgo = muDate.slice(0, dateIndex);
+
   const today = new Date();
-  const realDate = new Date(today.getTime());
-  realDate.setDate(today.getDate() - daysAgo);
+  let realDate = new Date(today.getTime());
+
+  if (muDate !== undefined) {
+    const daysStr = " days";
+    const regex = new RegExp("\\b" + daysStr + "\\b");
+    const dateIndex = muDate.search(regex);
+    const daysAgo = muDate.slice(0, dateIndex);
+    realDate.setDate(today.getDate() - daysAgo);
+  }
 
   muSourceData = {
     sourceID: muSource._id,
@@ -248,7 +260,7 @@ export const updateMangaHelper = async (id: ObjectId) => {
   const indexID = mlPath.indexOf("/");
   const pathID = mlPath.substring(indexID + 1);
 
-  const data: MLResponse = await axios
+  const data: IMLResponse = await axios
     .get(mlSource.updateURL, {
       params: { page: 1, id_serie: pathID },
       headers: {
