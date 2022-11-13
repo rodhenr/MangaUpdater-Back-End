@@ -2,7 +2,7 @@ import axios from "axios";
 import { sourceModel } from "../models/SourceModel";
 import * as cheerio from "cheerio";
 import { ObjectId } from "mongoose";
-import { mangaModel, IManga, ISource } from "../models/MangaModel";
+import { mangaModel, ISource } from "../models/MangaModel";
 
 interface Scanlator {
   name: string;
@@ -31,9 +31,6 @@ interface MLResponse {
 
 // Busca pelos dados de um novo mangá
 export const newMangaHelper = async (muPath: string, mlPath: string) => {
-  //RESOLVER CASO DE MANGA SEM CAPITULO
-  //EXEMPLO y11s57s
-
   const muSource = await sourceModel.findOne({ abb: "MU" });
   const mlSource = await sourceModel.findOne({ abb: "ML" });
 
@@ -62,25 +59,40 @@ export const newMangaHelper = async (muPath: string, mlPath: string) => {
   //MangaUpdates
   let muSourceData: ISource,
     mlSourceData: ISource,
-    muChapter,
+    muChapter = "N/A",
     muDate,
-    muScan,
+    muScan = "N/A",
     finalSources: ISource[];
 
-  if ($mu("div.sContent:contains('v.')").length > 0) {
+  if ($mu("div.sCat:contains('Latest Release(s)')").next().text() === "N/A\n") {
+    muChapter = "N/A";
+  } else if ($mu("div.sContent:contains('v.')").length > 0) {
     muChapter = $mu("div.sContent:contains('c.') i").eq(1).text();
   } else {
     muChapter = $mu("div.sContent:contains('c.') i").first().text();
   }
-  muScan = $mu('a[title="Group Info"]').first().text();
+
+  if (
+    $mu('a[title="Group Info"]').first().text() !== undefined &&
+    $mu('a[title="Group Info"]').first().text() !== ""
+  ) {
+    muScan = $mu('a[title="Group Info"]').first().text();
+  }
+
   muDate = $mu(".sContent span").first().prop("title");
-  const daysStr = " days";
-  const regex = new RegExp("\\b" + daysStr + "\\b");
-  const dateIndex = muDate.search(regex);
-  const daysAgo = muDate.slice(0, dateIndex);
+
   const today = new Date();
-  const realDate = new Date(today.getTime());
-  realDate.setDate(today.getDate() - daysAgo);
+  let realDate = new Date(today.getTime());
+
+  if (muDate !== undefined) {
+    const daysStr = " days";
+    const regex = new RegExp("\\b" + daysStr + "\\b");
+    const dateIndex = muDate.search(regex);
+    const daysAgo = muDate.slice(0, dateIndex);
+    realDate.setDate(today.getDate() - daysAgo);
+  }
+
+  console.log(muScan);
 
   muSourceData = {
     sourceID: muSource._id,

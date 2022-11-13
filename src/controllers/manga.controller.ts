@@ -19,7 +19,7 @@ const newManga = async (req: Request | any, res: Response) => {
     const user = await userModel.findOne({ email: userEmail });
 
     if (user === null || !user.admin)
-      res.status(400).send("Você não tem permissão de cadastro.");
+      return res.status(400).send("Você não tem permissão de cadastro.");
 
     const isNew = await mangaModel.findOne({
       sources: {
@@ -157,6 +157,10 @@ const getMangaModal = async (req: Request | any, res: Response) => {
 
     const mangaSources = await Promise.all(
       manga.sources.map(async (i) => {
+        if (i.chapter === "N/A" || i.scanlator === "N/A") {
+          return {};
+        }
+
         let filter;
 
         if (userSource.length === 0) {
@@ -200,7 +204,7 @@ const getMangaModal = async (req: Request | any, res: Response) => {
       author: manga.author,
       genres: manga.genres,
       image: manga.image,
-      sources: mangaSources,
+      sources: mangaSources.filter((i) => i.sourceID),
     };
 
     res.status(200).json(data);
